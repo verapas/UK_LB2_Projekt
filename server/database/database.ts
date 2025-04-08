@@ -14,7 +14,11 @@ export class Database {
       password: process.env.DB_PASSWORD || 'supersecret123',
       connectionLimit: 5,
     })
-    this.initializeDBSchema()
+    this.initializeDBSchema().then(() => {
+      console.log('Database initialized')
+    }).catch(() => {
+      console.log('Database initialization failed')
+    })
   }
 
   // Methods
