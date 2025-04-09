@@ -2,7 +2,7 @@ import { Express, NextFunction, Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { db } from '../database'
+import { db, Post, User } from '../database'
 
 const secretKey = process.env.SECRET_KEY || 'fallback-secret-key'
 
@@ -127,10 +127,7 @@ export class API {
       const checkUserQuery = `SELECT *
                               FROM users
                               WHERE username = ?`
-      const users = await db.executeSQL<{ id: number; username: string }>(
-        checkUserQuery,
-        [username]
-      )
+      const users = await db.executeSQL<User>(checkUserQuery, [username])
 
       // Check if users is an array and has items
       if (Array.isArray(users) && users.length > 0) {
@@ -166,7 +163,7 @@ export class API {
       const query = `SELECT *
                      FROM users
                      WHERE username = ?`
-      const users = await db.executeSQL(query, [username])
+      const users = await db.executeSQL<User>(query, [username])
 
       if (!Array.isArray(users) || users.length === 0) {
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' })
@@ -204,7 +201,7 @@ export class API {
         ORDER BY p.created_at DESC
       `
 
-      const posts = await db.executeSQL(query)
+      const posts = await db.executeSQL<Post & { username: string }>(query)
       res.json(posts)
     } catch (error) {
       console.error('Error fetching posts:', error)
@@ -214,7 +211,7 @@ export class API {
 
   private getAllPostsByUserId = async (req: Request, res: Response) => {
     try {
-      const result = await db.executeSQL(
+      const result = await db.executeSQL<Post>(
         'SELECT * FROM posts ORDER BY created_at DESC'
       )
       res.status(200).json(result)
@@ -257,9 +254,10 @@ export class API {
     }
 
     try {
-      const post = await db.executeSQL('SELECT * FROM posts WHERE id = ?', [
-        postId,
-      ])
+      const post = await db.executeSQL<Post>(
+        'SELECT * FROM posts WHERE id = ?',
+        [postId]
+      )
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -285,9 +283,10 @@ export class API {
     const postId = req.params.id
 
     try {
-      const post = await db.executeSQL('SELECT * FROM posts WHERE id = ?', [
-        postId,
-      ])
+      const post = await db.executeSQL<Post>(
+        'SELECT * FROM posts WHERE id = ?',
+        [postId]
+      )
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })

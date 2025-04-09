@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise'
-import { USER_TABLE, POST_TABLE, COMMENT_TABLE, LIKE_TABLE } from './schema'
+import { COMMENT_TABLE, LIKE_TABLE, POST_TABLE, USER_TABLE } from './schema'
 
 class Database {
   // Properties
@@ -31,9 +31,9 @@ class Database {
     await this.executeSQL(LIKE_TABLE)
   }
 
-  public executeSQL = async <T = any>(
+  public executeSQL = async <T = never>(
     query: string,
-    params: any[] = []
+    params: string[] = []
   ): Promise<T[] | mysql.ResultSetHeader> => {
     try {
       const conn = await this._pool.getConnection()
