@@ -48,7 +48,7 @@ function setupLogin() {
 
       if (data?.token) {
         localStorage.setItem("user", JSON.stringify(data));
-        window.location.href = "dashboard.html";
+        window.location.href = "home.html";
       } else if (data?.error) {
         errorText.style.color = "red";
         errorText.innerText = data.error;
