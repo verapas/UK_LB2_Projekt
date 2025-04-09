@@ -1,21 +1,18 @@
-import { Request, Response, Express, NextFunction } from 'express';
-import { body, validationResult } from 'express-validator';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { Database } from '../database';
+import { Express, NextFunction, Request, Response } from 'express'
+import { body, validationResult } from 'express-validator'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import { Database } from '../database'
 
-const secretKey = process.env.SECRET_KEY || 'fallback-secret-key';
+const secretKey = process.env.SECRET_KEY || 'fallback-secret-key'
 
 export class API {
   // Properties
-  app: Express;
-  db: Database;
+  app: Express
+  db: Database
 
   // Constructor
   constructor(app: Express) {
-    this.app = app;
-    this.db = new Database();
-    this.setupRoutes();
 
     this.app.post('/api/posts', this.createPost.bind(this))
     this.app.get('/api/posts', this.getAllPosts.bind(this))
@@ -29,20 +26,25 @@ export class API {
     this.app.post(
       '/api/register',
       [
-        body('username').isLength({ min: 3 }).withMessage('Benutzername muss mindestens 3 Zeichen lang sein'),
-        body('password').isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein')
+        body('username')
+          .isLength({ min: 3 })
+          .withMessage('Benutzername muss mindestens 3 Zeichen lang sein'),
+        body('password')
+          .isLength({ min: 6 })
+          .withMessage('Passwort muss mindestens 6 Zeichen lang sein'),
       ],
       this.register.bind(this)
-    );
-
+    )
     this.app.post(
       '/api/login',
       [
-        body('username').notEmpty().withMessage('Benutzername ist erforderlich'),
-        body('password').notEmpty().withMessage('Passwort ist erforderlich')
+        body('username')
+          .notEmpty()
+          .withMessage('Benutzername ist erforderlich'),
+        body('password').notEmpty().withMessage('Passwort ist erforderlich'),
       ],
       this.login.bind(this)
-    );
+    )
 
     // Protected routes
     this.app.get('/api/posts', this.authenticateToken.bind(this), this.getPosts.bind(this));
@@ -51,16 +53,16 @@ export class API {
       this.authenticateToken.bind(this),
       [body('content').notEmpty().withMessage('Inhalt darf nicht leer sein')],
       this.createPost.bind(this)
-    );
+    )
   }
 
   // Authentication middleware
   private authenticateToken(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
 
     if (!token) {
-      return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' });
+      return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' })
     }
 
     jwt.verify(token, secretKey, (err: any, user: any) => {
@@ -75,60 +77,68 @@ export class API {
   // Register endpoint
   private async register(req: Request, res: Response) {
     try {
-      const errors = validationResult(req);
+      const errors = validationResult(req)
       if (!errors.isEmpty()) {
-        return res.status(400).json({ error: errors.array()[0].msg });
+        return res.status(400).json({ error: errors.array()[0].msg })
       }
 
-      const { username, password } = req.body;
+      const { username, password } = req.body
 
       // Check if user exists
-      const checkUserQuery = `SELECT * FROM users WHERE username = ?`;
-      const users = await this.db.executeSQL<{id: number, username: string}>(checkUserQuery, [username]);
+      const checkUserQuery = `SELECT *
+                              FROM users
+                              WHERE username = ?`
+      const users = await this.db.executeSQL<{ id: number; username: string }>(
+        checkUserQuery,
+        [username]
+      )
 
       // Check if users is an array and has items
       if (Array.isArray(users) && users.length > 0) {
-        return res.status(400).json({ error: 'Benutzername bereits vergeben' });
+        return res.status(400).json({ error: 'Benutzername bereits vergeben' })
       }
 
       // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10)
 
       // Insert new user
-      const insertQuery = `INSERT INTO users (username, password, role) VALUES (?, ?, 'user')`;
-      await this.db.executeSQL(insertQuery, [username, hashedPassword]);
+      const insertQuery = `INSERT INTO users (username, password, role)
+                           VALUES (?, ?, 'user')`
+      await this.db.executeSQL(insertQuery, [username, hashedPassword])
 
-      res.status(201).json({ status: 'registered' });
+      res.status(201).json({ status: 'registered' })
     } catch (error) {
-      console.error('Registration error:', error);
-      res.status(500).json({ error: 'Interner Serverfehler' });
+      console.error('Registration error:', error)
+      res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }
 
   // Login endpoint
   private async login(req: Request, res: Response) {
     try {
-      const errors = validationResult(req);
+      const errors = validationResult(req)
       if (!errors.isEmpty()) {
-        return res.status(400).json({ error: errors.array()[0].msg });
+        return res.status(400).json({ error: errors.array()[0].msg })
       }
 
-      const { username, password } = req.body;
+      const { username, password } = req.body
 
       // Get user
-      const query = `SELECT * FROM users WHERE username = ?`;
-      const users = await this.db.executeSQL(query, [username]);
+      const query = `SELECT *
+                     FROM users
+                     WHERE username = ?`
+      const users = await this.db.executeSQL(query, [username])
 
       if (!Array.isArray(users) || users.length === 0) {
-        return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+        return res.status(401).json({ error: 'Ungültige Anmeldedaten' })
       }
 
-      const user = users[0];
+      const user = users[0]
 
       // Check password
-      const passwordValid = await bcrypt.compare(password, user.password);
+      const passwordValid = await bcrypt.compare(password, user.password)
       if (!passwordValid) {
-        return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+        return res.status(401).json({ error: 'Ungültige Anmeldedaten' })
       }
 
       // Create token
@@ -136,12 +146,12 @@ export class API {
         { id: user.id, username: user.username, role: user.role },
         secretKey,
         { expiresIn: '1h' }
-      );
+      )
 
-      res.json({ token, username: user.username, id: user.id, role: user.role });
+      res.json({ token, username: user.username, id: user.id, role: user.role })
     } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ error: 'Interner Serverfehler' });
+      console.error('Login error:', error)
+      res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }
 
@@ -149,49 +159,53 @@ export class API {
   private async getPosts(req: Request, res: Response) {
     try {
       const query = `
-        SELECT p.*, u.username 
+        SELECT p.*, u.username
         FROM posts p
-        JOIN users u ON p.user_id = u.id
+               JOIN users u ON p.user_id = u.id
         ORDER BY p.created_at DESC
-      `;
+      `
 
-      const posts = await this.db.executeSQL(query);
-      res.json(posts);
+      const posts = await this.db.executeSQL(query)
+      res.json(posts)
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      res.status(500).json({ error: 'Interner Serverfehler' });
+      console.error('Error fetching posts:', error)
+      res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }
 
   // Create post endpoint
   private async createPost(req: Request, res: Response) {
     try {
-      const errors = validationResult(req);
+      const errors = validationResult(req)
       if (!errors.isEmpty()) {
-        return res.status(400).json({ error: errors.array()[0].msg });
+        return res.status(400).json({ error: errors.array()[0].msg })
       }
 
-      const { content } = req.body;
-      const user = (req as any).user;
+      const { content } = req.body
+      const user = (req as any).user
 
-      const query = `INSERT INTO posts (content, user_id, created_at) VALUES (?, ?, NOW())`;
-      await this.db.executeSQL(query, [content, user.id]);
+      const query = `INSERT INTO posts (content, user_id, created_at)
+                     VALUES (?, ?, NOW())`
+      await this.db.executeSQL(query, [content, user.id])
 
-      res.status(201).json({ status: 'created' });
+      res.status(201).json({ status: 'created' })
     } catch (error) {
-      console.error('Error creating post:', error);
-      res.status(500).json({ error: 'Interner Serverfehler' });
+      console.error('Error creating post:', error)
+      res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }
 
-
   private getAllPosts = async (req: Request, res: Response) => {
     try {
-      const result = await this.db.executeSQL('SELECT * FROM post ORDER BY createdAt DESC')
+      const result = await this.db.executeSQL(
+        'SELECT * FROM post ORDER BY createdAt DESC'
+      )
       res.status(200).json(result)
     } catch (err) {
       console.error('Error loading posts:', err)
-      res.status(500).json({ error: 'An error occurred while loading the posts' })
+      res
+        .status(500)
+        .json({ error: 'An error occurred while loading the posts' })
     }
   }
 
@@ -204,7 +218,9 @@ export class API {
     }
 
     try {
-      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [postId])
+      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [
+        postId,
+      ])
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -220,7 +236,9 @@ export class API {
       res.status(200).json({ message: 'Post updated', result })
     } catch (err) {
       console.error('Error updating post:', err)
-      res.status(500).json({ error: 'An error occurred while updating the post' })
+      res
+        .status(500)
+        .json({ error: 'An error occurred while updating the post' })
     }
   }
 
@@ -228,7 +246,9 @@ export class API {
     const postId = req.params.id
 
     try {
-      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [postId])
+      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [
+        postId,
+      ])
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -236,15 +256,16 @@ export class API {
 
       // You can add logic here to check user permissions
 
-      const result = await this.db.executeSQL(
-        'DELETE FROM post WHERE id = ?',
-        [postId]
-      )
+      const result = await this.db.executeSQL('DELETE FROM post WHERE id = ?', [
+        postId,
+      ])
 
       res.status(200).json({ message: 'Post deleted', result })
     } catch (err) {
       console.error('Error deleting post:', err)
-      res.status(500).json({ error: 'An error occurred while deleting the post' })
+      res
+        .status(500)
+        .json({ error: 'An error occurred while deleting the post' })
     }
   }
 }
