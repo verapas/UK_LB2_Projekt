@@ -184,28 +184,10 @@ export class API {
     }
   }
 
-  private createPost = async (req: Request, res: Response) => {
-    const { content, userId } = req.body
-
-    if (!content || !userId) {
-      return res.status(400).json({ error: 'Content and userId are required' })
-    }
-
-    try {
-      const result = await db.executeSQL(
-        'INSERT INTO post (content, userId) VALUES (?, ?)',
-        [content, userId]
-      )
-      res.status(201).json({ message: 'Post created', result })
-    } catch (err) {
-      console.error('Error creating post:', err)
-      res.status(500).json({ error: 'An error occurred while creating the post' })
-    }
-  }
 
   private getAllPosts = async (req: Request, res: Response) => {
     try {
-      const result = await db.executeSQL('SELECT * FROM post ORDER BY createdAt DESC')
+      const result = await this.db.executeSQL('SELECT * FROM post ORDER BY createdAt DESC')
       res.status(200).json(result)
     } catch (err) {
       console.error('Error loading posts:', err)
@@ -222,7 +204,7 @@ export class API {
     }
 
     try {
-      const post = await db.executeSQL('SELECT * FROM post WHERE id = ?', [postId])
+      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [postId])
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -230,7 +212,7 @@ export class API {
 
       // You can add logic here to check user permissions
 
-      const result = await db.executeSQL(
+      const result = await this.db.executeSQL(
         'UPDATE post SET content = ? WHERE id = ?',
         [content, postId]
       )
@@ -246,7 +228,7 @@ export class API {
     const postId = req.params.id
 
     try {
-      const post = await db.executeSQL('SELECT * FROM post WHERE id = ?', [postId])
+      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [postId])
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -254,7 +236,7 @@ export class API {
 
       // You can add logic here to check user permissions
 
-      const result = await db.executeSQL(
+      const result = await this.db.executeSQL(
         'DELETE FROM post WHERE id = ?',
         [postId]
       )

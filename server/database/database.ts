@@ -9,7 +9,7 @@ export class Database {
   constructor() {
     this._pool = mysql.createPool({
       database: process.env.DB_NAME || 'minitwitter',
-      host: process.env.DB_HOST || 'mariadb',
+      host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'minitwitter',
       password: process.env.DB_PASSWORD || 'supersecret123',
       connectionLimit: 5,

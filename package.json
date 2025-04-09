@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "concurrently \"yarn dev:server\" \"yarn dev:client\"",
     "dev:server": "vite",
-    "dev:client": "livereload client/ -p 35730 -e html,js,css",
+    "dev:client": "livereload client/ -p 35731 -e html,js,css",
     "build": "vite build",
     "start": "NODE_ENV=production node dist/index.cjs",
     "lint": "eslint .",
@@ -44,6 +44,6 @@
     "vite": "^5.4.11",
     "vite-express": "^0.19.0",
     "vite-plugin-full-reload": "^1.2.0",
-    "vite-plugin-node": "^5.0.0"
+    "vite-plugin-node": "^4.0.0"
   }
 }
