@@ -239,7 +239,7 @@ export class API {
   private getAllPosts = async (req: Request, res: Response) => {
     try {
       const result = await this.db.executeSQL(
-        'SELECT * FROM post ORDER BY createdAt DESC'
+        'SELECT * FROM posts ORDER BY created_at DESC'
       )
       res.status(200).json(result)
     } catch (err) {
@@ -259,9 +259,10 @@ export class API {
     }
 
     try {
-      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [
-        postId,
-      ])
+      const post = await this.db.executeSQL(
+        'SELECT * FROM posts WHERE id = ?',
+        [postId]
+      )
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -270,7 +271,7 @@ export class API {
       // You can add logic here to check user permissions
 
       const result = await this.db.executeSQL(
-        'UPDATE post SET content = ? WHERE id = ?',
+        'UPDATE posts SET content = ? WHERE id = ?',
         [content, postId]
       )
 
@@ -287,9 +288,10 @@ export class API {
     const postId = req.params.id
 
     try {
-      const post = await this.db.executeSQL('SELECT * FROM post WHERE id = ?', [
-        postId,
-      ])
+      const post = await this.db.executeSQL(
+        'SELECT * FROM posts WHERE id = ?',
+        [postId]
+      )
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -297,9 +299,10 @@ export class API {
 
       // You can add logic here to check user permissions
 
-      const result = await this.db.executeSQL('DELETE FROM post WHERE id = ?', [
-        postId,
-      ])
+      const result = await this.db.executeSQL(
+        'DELETE FROM posts WHERE id = ?',
+        [postId]
+      )
 
       res.status(200).json({ message: 'Post deleted', result })
     } catch (err) {
