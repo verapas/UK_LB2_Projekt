@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrieren – MiniTwitter</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="register.js"></script>
+</head>
+<body>
+<header class="header">
+  <h1 class="title">MiniTwitter</h1>
+</header>
+
+<main class="main">
+  <div class="box">
+    <input
+      id="username"
+      type="text"
+      placeholder="Benutzername"
+      required
+    />
+    <input
+      id="password"
+      type="password"
+      placeholder="Passwort"
+      required
+    />
+    <input
+      id="passwordConfirm"
+      type="password"
+      placeholder="Passwort wiederholen"
+      required
+    />
+    <button id="register">Registrieren</button>
+    <span id="error" class="error-message"></span>
+    <a href="index.html" class="link">
+      Bereits registriert? Jetzt anmelden
+    </a>
+  </div>
+</main>
+
+<footer class="footer">
+  <p>&copy; 2025 MiniTwit App</p>
+</footer>
+</body>
+</html>
