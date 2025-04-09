@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise'
 import { USER_TABLE, POST_TABLE, COMMENT_TABLE, LIKE_TABLE } from './schema'
 
-export class Database {
+class Database {
   // Properties
   private _pool: mysql.Pool
 
@@ -31,22 +31,26 @@ export class Database {
     await this.executeSQL(LIKE_TABLE)
   }
 
-  public executeSQL = async <T = any>(query: string, params: any[] = []): Promise<T[] | mysql.ResultSetHeader> => {
+  public executeSQL = async <T = any>(
+    query: string,
+    params: any[] = []
+  ): Promise<T[] | mysql.ResultSetHeader> => {
     try {
-      const conn = await this._pool.getConnection();
+      const conn = await this._pool.getConnection()
       try {
-        const [result] = await conn.query(query, params);
-        return result as T[] | mysql.ResultSetHeader;
+        const [result] = await conn.query(query, params)
+        return result as T[] | mysql.ResultSetHeader
       } finally {
-        conn.release();
+        conn.release()
       }
     } catch (err) {
-      console.error('Error executing SQL query:');
-      console.error(query);
-      console.error('Parameters:', params);
-      console.error(err);
-      throw err;
+      console.error('Error executing SQL query:')
+      console.error(query)
+      console.error('Parameters:', params)
+      console.error(err)
+      throw err
     }
   }
 }
+
 export const db = new Database()

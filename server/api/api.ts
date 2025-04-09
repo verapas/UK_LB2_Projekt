@@ -2,7 +2,7 @@ import { Express, NextFunction, Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { Database } from '../database'
+import { db } from '../database'
 
 const secretKey = process.env.SECRET_KEY || 'fallback-secret-key'
 
@@ -31,12 +31,10 @@ const verifyJetPayloadIsMiniTwitterPayload = (
 export class API {
   // Properties
   app: Express
-  db: Database
 
   // Constructor
   constructor(app: Express) {
     this.app = app
-    this.db = new Database()
     this.setupRoutes()
   }
 
@@ -129,7 +127,7 @@ export class API {
       const checkUserQuery = `SELECT *
                               FROM users
                               WHERE username = ?`
-      const users = await this.db.executeSQL<{ id: number; username: string }>(
+      const users = await db.executeSQL<{ id: number; username: string }>(
         checkUserQuery,
         [username]
       )
@@ -145,7 +143,7 @@ export class API {
       // Insert new user
       const insertQuery = `INSERT INTO users (username, password, role)
                            VALUES (?, ?, 'user')`
-      await this.db.executeSQL(insertQuery, [username, hashedPassword])
+      await db.executeSQL(insertQuery, [username, hashedPassword])
 
       res.status(201).json({ status: 'registered' })
     } catch (error) {
@@ -168,7 +166,7 @@ export class API {
       const query = `SELECT *
                      FROM users
                      WHERE username = ?`
-      const users = await this.db.executeSQL(query, [username])
+      const users = await db.executeSQL(query, [username])
 
       if (!Array.isArray(users) || users.length === 0) {
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' })
@@ -206,7 +204,7 @@ export class API {
         ORDER BY p.created_at DESC
       `
 
-      const posts = await this.db.executeSQL(query)
+      const posts = await db.executeSQL(query)
       res.json(posts)
     } catch (error) {
       console.error('Error fetching posts:', error)
@@ -216,7 +214,7 @@ export class API {
 
   private getAllPostsByUserId = async (req: Request, res: Response) => {
     try {
-      const result = await this.db.executeSQL(
+      const result = await db.executeSQL(
         'SELECT * FROM posts ORDER BY created_at DESC'
       )
       res.status(200).json(result)
@@ -241,7 +239,7 @@ export class API {
 
       const query = `INSERT INTO posts (content, user_id, created_at)
                      VALUES (?, ?, NOW())`
-      await this.db.executeSQL(query, [content, user.id])
+      await db.executeSQL(query, [content, user.id])
 
       res.status(201).json({ status: 'created' })
     } catch (error) {
@@ -259,10 +257,9 @@ export class API {
     }
 
     try {
-      const post = await this.db.executeSQL(
-        'SELECT * FROM posts WHERE id = ?',
-        [postId]
-      )
+      const post = await db.executeSQL('SELECT * FROM posts WHERE id = ?', [
+        postId,
+      ])
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -270,7 +267,7 @@ export class API {
 
       // You can add logic here to check user permissions
 
-      const result = await this.db.executeSQL(
+      const result = await db.executeSQL(
         'UPDATE posts SET content = ? WHERE id = ?',
         [content, postId]
       )
@@ -288,10 +285,9 @@ export class API {
     const postId = req.params.id
 
     try {
-      const post = await this.db.executeSQL(
-        'SELECT * FROM posts WHERE id = ?',
-        [postId]
-      )
+      const post = await db.executeSQL('SELECT * FROM posts WHERE id = ?', [
+        postId,
+      ])
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
@@ -299,10 +295,9 @@ export class API {
 
       // You can add logic here to check user permissions
 
-      const result = await this.db.executeSQL(
-        'DELETE FROM posts WHERE id = ?',
-        [postId]
-      )
+      const result = await db.executeSQL('DELETE FROM posts WHERE id = ?', [
+        postId,
+      ])
 
       res.status(200).json({ message: 'Post deleted', result })
     } catch (err) {
