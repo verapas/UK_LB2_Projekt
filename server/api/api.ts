@@ -197,7 +197,7 @@ export class API {
   }
 
   // Get posts endpoint
-  private async getPosts(req: AuthenticatedRequest, res: Response) {
+  private async getPosts(_: AuthenticatedRequest, res: Response) {
     try {
       const query = `
         SELECT p.*, u.username
