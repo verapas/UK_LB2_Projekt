@@ -6,9 +6,27 @@ import { Database } from '../database'
 
 const secretKey = process.env.SECRET_KEY || 'fallback-secret-key'
 
-interface AuthenticatedRequest extends Request {
-  user?: string | jwt.JwtPayload
+interface MiniTwitterJwtPayload extends jwt.JwtPayload {
+  id: number
+  username: string
+  role: string
 }
+
+interface AuthenticatedRequest extends Request {
+  user?: MiniTwitterJwtPayload
+}
+
+/**
+ * Guard for MiniTwitterJwtPayload
+ * @param payload
+ */
+const verifyJetPayloadIsMiniTwitterPayload = (
+  payload: string | jwt.JwtPayload
+): payload is MiniTwitterJwtPayload =>
+  typeof payload === 'string' ||
+  !payload['id'] ||
+  !payload['username'] ||
+  !payload['role']
 
 export class API {
   // Properties
@@ -86,13 +104,13 @@ export class API {
       return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' })
     }
 
-    jwt.verify(token, secretKey, (err, user) => {
-      if (err) {
+    jwt.verify(token, secretKey, (err, payload) => {
+      if (err || !verifyJetPayloadIsMiniTwitterPayload(payload)) {
         return res
           .status(403)
           .json({ error: 'Ungültiges oder abgelaufenes Token.' })
       }
-      req.user = user
+      req.user = payload
       next()
     })
   }
@@ -205,7 +223,7 @@ export class API {
       }
 
       const { content } = req.body
-      const user = (req as any).user
+      const user = req.user
 
       const query = `INSERT INTO posts (content, user_id, created_at)
                      VALUES (?, ?, NOW())`
@@ -234,7 +252,7 @@ export class API {
 
   private updatePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
-    const { content, userId } = req.body
+    const { content } = req.body
 
     if (!content) {
       return res.status(400).json({ error: 'Content is required' })
