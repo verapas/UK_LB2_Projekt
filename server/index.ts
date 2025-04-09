@@ -29,6 +29,7 @@ class Backend {
     this._app = express()
     this._app.use(express.json()) // Wichtig: Damit req.body funktioniert!
     this._database = new Database()
+    this._app.use(express.json())
     this._api = new API(this._app)
     this._env = process.env.NODE_ENV || 'development'
 

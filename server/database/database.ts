@@ -2,8 +2,10 @@ import mysql from 'mysql2/promise'
 import { USER_TABLE, POST_TABLE, COMMENT_TABLE, LIKE_TABLE } from './schema'
 
 export class Database {
+  // Properties
   private _pool: mysql.Pool
 
+  // Constructor
   constructor() {
     this._pool = mysql.createPool({
       database: process.env.DB_NAME || 'minitwitter',
@@ -20,6 +22,7 @@ export class Database {
       })
   }
 
+  // Methods
   private initializeDBSchema = async () => {
     console.log('Initializing DB schema...')
     await this.executeSQL(USER_TABLE)
@@ -46,3 +49,4 @@ export class Database {
     }
   }
 }
+export const db = new Database()
