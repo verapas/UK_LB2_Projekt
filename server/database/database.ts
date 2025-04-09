@@ -21,26 +21,28 @@ export class Database {
   }
 
   private initializeDBSchema = async () => {
-    console.log('⚙️  Initializing DB schema...')
+    console.log('Initializing DB schema...')
     await this.executeSQL(USER_TABLE)
     await this.executeSQL(POST_TABLE)
     await this.executeSQL(COMMENT_TABLE)
     await this.executeSQL(LIKE_TABLE)
   }
 
-  public executeSQL = async (query: string) => {
+  public executeSQL = async <T = any>(query: string, params: any[] = []): Promise<T[] | mysql.ResultSetHeader> => {
     try {
-      const conn = await this._pool.getConnection()
+      const conn = await this._pool.getConnection();
       try {
-        const [result] = await conn.query(query)
-        return result
+        const [result] = await conn.query(query, params);
+        return result as T[] | mysql.ResultSetHeader;
       } finally {
-        conn.release()
+        conn.release();
       }
     } catch (err) {
-      console.error('Error executing SQL query:')
-      console.error(query)
-      console.error(err)
+      console.error('Error executing SQL query:');
+      console.error(query);
+      console.error('Parameters:', params);
+      console.error(err);
+      throw err;
     }
   }
 }

@@ -1,15 +1,181 @@
-import { Request, Response, Express } from 'express'
+import { Request, Response, Express, NextFunction } from 'express';
+import { body, validationResult } from 'express-validator';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { Database } from '../database';
+
+const secretKey = process.env.SECRET_KEY || 'fallback-secret-key';
 
 export class API {
   // Properties
-  app: Express
+  app: Express;
+  db: Database;
+
   // Constructor
   constructor(app: Express) {
-    this.app = app
-    this.app.get('/hello', this.sayHello)
+    this.app = app;
+    this.db = new Database();
+    this.setupRoutes();
   }
-  // Methods
-  private sayHello(req: Request, res: Response) {
-    res.send('Hello There!')
+
+  // Setup all routes
+  private setupRoutes() {
+    // Auth routes
+    this.app.post(
+      '/api/register',
+      [
+        body('username').isLength({ min: 3 }).withMessage('Benutzername muss mindestens 3 Zeichen lang sein'),
+        body('password').isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein')
+      ],
+      this.register.bind(this)
+    );
+
+    this.app.post(
+      '/api/login',
+      [
+        body('username').notEmpty().withMessage('Benutzername ist erforderlich'),
+        body('password').notEmpty().withMessage('Passwort ist erforderlich')
+      ],
+      this.login.bind(this)
+    );
+
+    // Protected routes
+    this.app.get('/api/posts', this.authenticateToken.bind(this), this.getPosts.bind(this));
+    this.app.post(
+      '/api/posts',
+      this.authenticateToken.bind(this),
+      [body('content').notEmpty().withMessage('Inhalt darf nicht leer sein')],
+      this.createPost.bind(this)
+    );
+  }
+
+  // Authentication middleware
+  private authenticateToken(req: Request, res: Response, next: NextFunction) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' });
+    }
+
+    jwt.verify(token, secretKey, (err: any, user: any) => {
+      if (err) {
+        return res.status(403).json({ error: 'Ungültiges oder abgelaufenes Token.' });
+      }
+      (req as any).user = user;
+      next();
+    });
+  }
+
+  // Register endpoint
+  private async register(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+      }
+
+      const { username, password } = req.body;
+
+      // Check if user exists
+      const checkUserQuery = `SELECT * FROM users WHERE username = ?`;
+      const users = await this.db.executeSQL<{id: number, username: string}>(checkUserQuery, [username]);
+
+      // Check if users is an array and has items
+      if (Array.isArray(users) && users.length > 0) {
+        return res.status(400).json({ error: 'Benutzername bereits vergeben' });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insert new user
+      const insertQuery = `INSERT INTO users (username, password, role) VALUES (?, ?, 'user')`;
+      await this.db.executeSQL(insertQuery, [username, hashedPassword]);
+
+      res.status(201).json({ status: 'registered' });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
+  }
+
+  // Login endpoint
+  private async login(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+      }
+
+      const { username, password } = req.body;
+
+      // Get user
+      const query = `SELECT * FROM users WHERE username = ?`;
+      const users = await this.db.executeSQL(query, [username]);
+
+      if (!Array.isArray(users) || users.length === 0) {
+        return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+      }
+
+      const user = users[0];
+
+      // Check password
+      const passwordValid = await bcrypt.compare(password, user.password);
+      if (!passwordValid) {
+        return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+      }
+
+      // Create token
+      const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role },
+        secretKey,
+        { expiresIn: '1h' }
+      );
+
+      res.json({ token, username: user.username, id: user.id, role: user.role });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
+  }
+
+  // Get posts endpoint
+  private async getPosts(req: Request, res: Response) {
+    try {
+      const query = `
+        SELECT p.*, u.username 
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        ORDER BY p.created_at DESC
+      `;
+
+      const posts = await this.db.executeSQL(query);
+      res.json(posts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
+  }
+
+  // Create post endpoint
+  private async createPost(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+      }
+
+      const { content } = req.body;
+      const user = (req as any).user;
+
+      const query = `INSERT INTO posts (content, user_id, created_at) VALUES (?, ?, NOW())`;
+      await this.db.executeSQL(query, [content, user.id]);
+
+      res.status(201).json({ status: 'created' });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
   }
 }
