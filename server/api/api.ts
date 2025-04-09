@@ -214,6 +214,20 @@ export class API {
     }
   }
 
+  private getAllPostsByUserId = async (req: Request, res: Response) => {
+    try {
+      const result = await this.db.executeSQL(
+        'SELECT * FROM posts ORDER BY created_at DESC'
+      )
+      res.status(200).json(result)
+    } catch (err) {
+      console.error('Error loading posts:', err)
+      res
+        .status(500)
+        .json({ error: 'An error occurred while loading the posts' })
+    }
+  }
+
   // Create post endpoint
   private async createPost(req: AuthenticatedRequest, res: Response) {
     try {
@@ -233,20 +247,6 @@ export class API {
     } catch (error) {
       console.error('Error creating post:', error)
       res.status(500).json({ error: 'Interner Serverfehler' })
-    }
-  }
-
-  private getAllPosts = async (req: Request, res: Response) => {
-    try {
-      const result = await this.db.executeSQL(
-        'SELECT * FROM posts ORDER BY created_at DESC'
-      )
-      res.status(200).json(result)
-    } catch (err) {
-      console.error('Error loading posts:', err)
-      res
-        .status(500)
-        .json({ error: 'An error occurred while loading the posts' })
     }
   }
 
