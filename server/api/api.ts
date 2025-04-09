@@ -23,10 +23,12 @@ interface AuthenticatedRequest extends Request {
 const verifyJetPayloadIsMiniTwitterPayload = (
   payload: string | jwt.JwtPayload
 ): payload is MiniTwitterJwtPayload =>
-  typeof payload === 'string' ||
-  !payload['id'] ||
-  !payload['username'] ||
-  !payload['role']
+  typeof payload !== 'string' &&
+  typeof payload['id'] === 'number' &&
+  typeof payload['username'] === 'string' &&
+  payload['username'].length > 0 &&
+  typeof payload['role'] === 'string' &&
+  payload['role'].length > 0
 
 export class API {
   // Properties
@@ -248,6 +250,8 @@ export class API {
   private updatePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const { content } = req.body
+
+    // todo make sure users can only update their own posts
 
     if (!content) {
       return res.status(400).json({ error: 'Content is required' })

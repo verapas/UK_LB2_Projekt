@@ -1,0 +1,252 @@
+const API_POSTS_URL = '/api/posts'
+const postsContainer = document.getElementById('postsContainer')
+const postButton = document.getElementById('postButton')
+const postContent = document.getElementById('postContent')
+const usernameSpan = document.getElementById('username')
+const editModal = document.getElementById('editModal')
+const closeButton = document.querySelector('.close-button')
+const editPostContent = document.getElementById('editPostContent')
+const editPostId = document.getElementById('editPostId')
+const saveEditButton = document.getElementById('saveEditButton')
+const logoutButton = document.getElementById('logoutButton')
+
+// Benutzer aus LocalStorage laden oder zum Login weiterleiten
+let currentUser = JSON.parse(localStorage.getItem('user'))
+if (!currentUser) {
+  // Wenn kein Benutzer eingeloggt ist, auf die Login-Seite umleiten
+  window.location.href = 'index.html'
+} else {
+  // Wenn ein Benutzer eingeloggt ist, den Benutzernamen anzeigen
+  usernameSpan.textContent = currentUser.username
+}
+
+// Modal-Funktionen
+closeButton.addEventListener('click', () => {
+  editModal.style.display = 'none'
+})
+
+window.addEventListener('click', (event) => {
+  if (event.target === editModal) {
+    editModal.style.display = 'none'
+  }
+})
+
+function sendAuthorizedApiRequest(url, method = 'GET', body) {
+  const userData = JSON.parse(localStorage.getItem('user'))
+  // todo maybe lock out user if token isn't present
+  return fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${userData.token}`,
+    },
+    body,
+  })
+}
+
+// Beitrag erstellen
+postButton.addEventListener('click', async () => {
+  const content = postContent.value.trim()
+  if (!content) return alert('Bitte Inhalt eingeben!')
+
+  try {
+    const response = await sendAuthorizedApiRequest(
+      API_POSTS_URL,
+      'POST',
+      JSON.stringify({ content })
+    )
+
+    if (response.ok) {
+      postContent.value = ''
+      loadPosts()
+    } else {
+      const error = await response.json()
+      alert(`Fehler beim Erstellen: ${error.error || 'Unbekannter Fehler'}`)
+    }
+  } catch (error) {
+    console.error('Fehler beim Erstellen:', error)
+    alert(
+      'Fehler beim Erstellen des Beitrags. Bitte versuche es später erneut.'
+    )
+  }
+})
+
+// Beitrag bearbeiten öffnen
+function openEditModal(postId, content) {
+  editPostId.value = postId
+  editPostContent.value = content
+  editModal.style.display = 'block'
+}
+
+// Beitrag speichern
+saveEditButton.addEventListener('click', async () => {
+  const postId = editPostId.value
+  const content = editPostContent.value.trim()
+
+  if (!content) return alert('Bitte Inhalt eingeben!')
+
+  try {
+    const response = await sendAuthorizedApiRequest(
+      `${API_POSTS_URL}/${postId}`,
+      'PUT',
+      JSON.stringify({ content })
+    )
+
+    if (response.ok) {
+      editModal.style.display = 'none'
+      loadPosts()
+    } else {
+      const error = await response.json()
+      alert(`Fehler beim Bearbeiten: ${error.error || 'Unbekannter Fehler'}`)
+    }
+  } catch (error) {
+    console.error('Fehler beim Bearbeiten:', error)
+    alert(
+      'Fehler beim Bearbeiten des Beitrags. Bitte versuche es später erneut.'
+    )
+  }
+})
+
+// Beitrag löschen
+async function deletePost(postId) {
+  if (!confirm('Möchtest du diesen Beitrag wirklich löschen?')) return
+
+  try {
+    const response = await sendAuthorizedApiRequest(
+      `${API_POSTS_URL}/${postId}`,
+      'DELETE'
+    )
+
+    if (response.ok) {
+      loadPosts()
+    } else {
+      const error = await response.json()
+      alert(`Fehler beim Löschen: ${error.error || 'Unbekannter Fehler'}`)
+    }
+  } catch (error) {
+    console.error('Fehler beim Löschen:', error)
+    alert('Fehler beim Löschen des Beitrags. Bitte versuche es später erneut.')
+  }
+}
+
+// Beiträge vom Server laden
+async function loadPosts() {
+  try {
+    postsContainer.innerHTML =
+      '<div class="loading">Beiträge werden geladen...</div>'
+
+    const res = await sendAuthorizedApiRequest(API_POSTS_URL)
+
+    if (!res.ok) {
+      throw new Error('Fehler beim Laden der Beiträge')
+    }
+
+    const posts = await res.json()
+
+    postsContainer.innerHTML = ''
+
+    if (posts.length === 0) {
+      postsContainer.innerHTML =
+        '<div class="no-posts">Keine Beiträge gefunden. Erstelle den ersten Beitrag!</div>'
+      return
+    }
+
+    posts.forEach((post) => {
+      const isOwner =
+        post.user_id === currentUser.id ||
+        currentUser.role === 'admin' ||
+        currentUser.role === 'moderator'
+      const postEl = document.createElement('div')
+      postEl.className = 'post box'
+      postEl.innerHTML = `
+        <div class="post-header">
+          <span class="post-author">@${post.username || 'Benutzer ' + post.user_id}</span>
+          <small class="post-date">${formatDate(post.created_at || new Date())}</small>
+        </div>
+        <div class="post-content">
+          <p>${post.content}</p>
+        </div>
+        <div class="post-actions">
+          <div class="vote-buttons">
+            <button onclick="vote(${post.id}, true)" class="vote-button">😸 <span id="likes-${post.id}">${post.likes || 0}</span></button>
+            <button onclick="vote(${post.id}, false)" class="vote-button">😾 <span id="dislikes-${post.id}">${post.dislikes || 0}</span></button>
+          </div>
+          ${
+            isOwner
+              ? `
+          <div class="post-management">
+            <button onclick="openEditModal(${post.id}, '${escapeJS(post.content)}')" class="icon-button edit-button">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deletePost(${post.id})" class="icon-button delete-button">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+          `
+              : ''
+          }
+        </div>
+      `
+      postsContainer.appendChild(postEl)
+    })
+  } catch (error) {
+    console.error('Fehler beim Laden der Beiträge:', error)
+    postsContainer.innerHTML =
+      '<div class="error">Fehler beim Laden der Beiträge. Bitte versuche es später erneut.</div>'
+  }
+}
+
+// Like-/Dislike-Funktion
+async function vote(postId, isLike) {
+  try {
+    const response = await sendAuthorizedApiRequest(
+      `${API_POSTS_URL}/${postId}/vote`,
+      'POST',
+      JSON.stringify({ isLike })
+    )
+
+    if (response.ok) {
+      loadPosts()
+    } else {
+      const error = await response.json()
+      console.error('Fehler beim Abstimmen:', error)
+    }
+  } catch (error) {
+    console.error('Fehler beim Abstimmen:', error)
+  }
+}
+
+// Hilfsfunktion zum Escapen von JavaScript-Strings für HTML-Attribute
+function escapeJS(string) {
+  return string
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+}
+
+// Hilfsfunktion zum Formatieren des Datums
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// Abmelden
+logoutButton.addEventListener('click', () => {
+  localStorage.removeItem('user')
+  localStorage.removeItem('token')
+  window.location.href = 'index.html'
+})
+
+// Beiträge beim Laden der Seite anzeigen
+document.addEventListener('DOMContentLoaded', () => {
+  loadPosts()
+})
