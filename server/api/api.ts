@@ -6,6 +6,10 @@ import { Database } from '../database'
 
 const secretKey = process.env.SECRET_KEY || 'fallback-secret-key'
 
+interface AuthenticatedRequest extends Request {
+  user?: string | jwt.JwtPayload
+}
+
 export class API {
   // Properties
   app: Express
@@ -13,11 +17,9 @@ export class API {
 
   // Constructor
   constructor(app: Express) {
-
-    this.app.post('/api/posts', this.createPost.bind(this))
-    this.app.get('/api/posts', this.getAllPosts.bind(this))
-    this.app.put('/api/posts/:id', this.updatePost.bind(this))
-    this.app.delete('/api/posts/:id', this.deletePost.bind(this))
+    this.app = app
+    this.db = new Database()
+    this.setupRoutes()
   }
 
   // Setup all routes
@@ -47,17 +49,36 @@ export class API {
     )
 
     // Protected routes
-    this.app.get('/api/posts', this.authenticateToken.bind(this), this.getPosts.bind(this));
     this.app.post(
       '/api/posts',
       this.authenticateToken.bind(this),
       [body('content').notEmpty().withMessage('Inhalt darf nicht leer sein')],
       this.createPost.bind(this)
     )
+    this.app.get(
+      '/api/posts',
+      this.authenticateToken.bind(this),
+      this.getPosts.bind(this)
+    )
+    this.app.put(
+      '/api/posts/:id',
+      this.authenticateToken.bind(this),
+      [body('content').notEmpty().withMessage('Inhalt darf nicht leer sein')],
+      this.updatePost.bind(this)
+    )
+    this.app.delete(
+      '/api/posts/:id',
+      this.authenticateToken.bind(this),
+      this.deletePost.bind(this)
+    )
   }
 
   // Authentication middleware
-  private authenticateToken(req: Request, res: Response, next: NextFunction) {
+  private authenticateToken(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
@@ -65,13 +86,15 @@ export class API {
       return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' })
     }
 
-    jwt.verify(token, secretKey, (err: any, user: any) => {
+    jwt.verify(token, secretKey, (err, user) => {
       if (err) {
-        return res.status(403).json({ error: 'Ungültiges oder abgelaufenes Token.' });
+        return res
+          .status(403)
+          .json({ error: 'Ungültiges oder abgelaufenes Token.' })
       }
-      (req as any).user = user;
-      next();
-    });
+      req.user = user
+      next()
+    })
   }
 
   // Register endpoint
@@ -156,7 +179,7 @@ export class API {
   }
 
   // Get posts endpoint
-  private async getPosts(req: Request, res: Response) {
+  private async getPosts(req: AuthenticatedRequest, res: Response) {
     try {
       const query = `
         SELECT p.*, u.username
@@ -174,7 +197,7 @@ export class API {
   }
 
   // Create post endpoint
-  private async createPost(req: Request, res: Response) {
+  private async createPost(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -209,7 +232,7 @@ export class API {
     }
   }
 
-  private updatePost = async (req: Request, res: Response) => {
+  private updatePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const { content, userId } = req.body
 
@@ -242,7 +265,7 @@ export class API {
     }
   }
 
-  private deletePost = async (req: Request, res: Response) => {
+  private deletePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
 
     try {
