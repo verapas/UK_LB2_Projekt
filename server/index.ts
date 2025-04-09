@@ -28,6 +28,7 @@ class Backend {
   constructor() {
     this._app = express()
     this._database = new Database()
+    this._app.use(express.json())
     this._api = new API(this._app)
     this._env = process.env.NODE_ENV || 'development'
 
