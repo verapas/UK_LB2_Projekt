@@ -446,3 +446,98 @@ input[type="password"] {
 .link:hover {
   text-decoration: underline;
 }
+
+
+.comments-section {
+  margin-top: 0.5rem;
+  border-top: 1px solid #38444d;
+  padding-top: 0.5rem;
+}
+
+.comments-toggle {
+  color: #8899a6;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comments-toggle:hover {
+  color: #1d9bf0;
+}
+
+.comments-container {
+  margin-top: 0.5rem;
+}
+
+.comments-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.comment {
+  padding: 0.8rem;
+  border-radius: 8px;
+  background-color: #253341;
+  margin-bottom: 0.5rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.comment-author {
+  font-weight: bold;
+  color: #1d9bf0;
+}
+
+.comment-date {
+  color: #8899a6;
+}
+
+.comment-content {
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.create-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.create-comment textarea {
+  min-height: 60px;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+}
+
+.comment-button {
+  align-self: flex-end;
+  padding: 0.5rem 1rem;
+  background-color: #1d9bf0;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.comment-button:hover {
+  background-color: #1a8cd8;
+}
