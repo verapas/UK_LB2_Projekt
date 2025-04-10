@@ -89,6 +89,16 @@ export class API {
       this.authenticateToken.bind(this),
       this.deletePost.bind(this)
     )
+    this.app.post(
+      '/api/posts/:id/dislike',
+      this.authenticateToken.bind(this),
+      this.dislikePost.bind(this)
+    );
+    this.app.post(
+      '/api/posts/:id/like',
+      this.authenticateToken.bind(this),
+      this.likePost.bind(this)
+    )
   }
 
   // Authentication middleware
@@ -197,17 +207,21 @@ export class API {
   private async getPosts(_: AuthenticatedRequest, res: Response) {
     try {
       const query = `
-        SELECT p.*, u.username
+        SELECT
+          p.*,
+          u.username,
+          CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = true) AS CHAR) as likes,
+          CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = false) AS CHAR) as dislikes
         FROM posts p
                JOIN users u ON p.user_id = u.id
         ORDER BY p.created_at DESC
-      `
+      `;
 
-      const posts = await db.executeSQL<Post & { username: string }>(query)
-      res.json(posts)
+      const posts = await db.executeSQL<Post & { username: string; likes: number; dislikes: number }>(query);
+      res.json(posts);
     } catch (error) {
-      console.error('Error fetching posts:', error)
-      res.status(500).json({ error: 'Interner Serverfehler' })
+      console.error('Error fetching posts:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   }
 
@@ -308,6 +322,50 @@ export class API {
       res
         .status(500)
         .json({ error: 'An error occurred while deleting the post' })
+    }
+  }
+  private likePost = async (req: AuthenticatedRequest, res: Response) => {
+    const postId = req.params.id;
+    const userId = req.user.id; // The logged-in user
+
+    if (!postId || isNaN(Number(postId))) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+
+    try {
+      const sql = `
+        INSERT INTO likes (user_id, post_id, is_like)
+        VALUES (?, ?, true)
+        ON DUPLICATE KEY UPDATE is_like = true
+      `;
+      await db.executeSQL(sql, [userId, postId]);
+
+      res.status(200).json({ message: 'Post liked' });
+    } catch (err) {
+      console.error('Error when liking:', err);
+      res.status(500).json({ error: 'Error when liking post' });
+    }
+  }
+  private dislikePost = async (req: AuthenticatedRequest, res: Response) => {
+    const postId = req.params.id;
+    const userId = req.user.id; // The logged-in user
+
+    if (!postId || isNaN(Number(postId))) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+
+    try {
+      const sql = `
+      INSERT INTO likes (user_id, post_id, is_like)
+      VALUES (?, ?, false)
+      ON DUPLICATE KEY UPDATE is_like = false
+    `;
+      await db.executeSQL(sql, [userId, postId]);
+
+      res.status(200).json({ message: 'Post disliked' });
+    } catch (err) {
+      console.error('Error when disliking:', err);
+      res.status(500).json({ error: 'Error when disliking post' });
     }
   }
 }
