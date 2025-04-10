@@ -9,6 +9,12 @@ const editPostContent = document.getElementById('editPostContent')
 const editPostId = document.getElementById('editPostId')
 const saveEditButton = document.getElementById('saveEditButton')
 const logoutButton = document.getElementById('logoutButton')
+const editCommentModal = document.getElementById('editCommentModal')
+const closeCommentModal = document.getElementById('closeCommentModal')
+const editCommentContent = document.getElementById('editCommentContent')
+const editCommentId = document.getElementById('editCommentId')
+const editCommentPostId = document.getElementById('editCommentPostId')
+const saveCommentButton = document.getElementById('saveCommentButton')
 
 // Benutzer aus LocalStorage laden oder zum Login weiterleiten
 let currentUser = JSON.parse(localStorage.getItem('user'))
@@ -20,7 +26,7 @@ if (!currentUser) {
   usernameSpan.textContent = currentUser.username
 }
 
-// Modal-Funktionen
+// Modal-Funktionen für Posts
 closeButton.addEventListener('click', () => {
   editModal.style.display = 'none'
 })
@@ -29,7 +35,18 @@ window.addEventListener('click', (event) => {
   if (event.target === editModal) {
     editModal.style.display = 'none'
   }
+  if (event.target === editCommentModal) {
+    editCommentModal.style.display = 'none'
+  }
 })
+
+// Modal-Funktionen für Kommentare
+closeCommentModal.addEventListener('click', () => {
+  editCommentModal.style.display = 'none'
+})
+
+// Kommentar speichern
+saveCommentButton.addEventListener('click', saveCommentEdit)
 
 function sendAuthorizedApiRequest(url, method = 'GET', body) {
   const userData = JSON.parse(localStorage.getItem('user'))
@@ -151,11 +168,25 @@ async function loadPosts() {
       return
     }
 
-    posts.forEach((post) => {
+    // Alle Posts erstellen
+    const renderedPosts = await Promise.all(posts.map(async (post) => {
       const isOwner =
         post.user_id === currentUser.id ||
         currentUser.role === 'admin' ||
         currentUser.role === 'moderator'
+      
+      // Kommentare im Voraus laden
+      let commentCount = 0;
+      try {
+        const commentsResponse = await sendAuthorizedApiRequest(`${API_POSTS_URL}/${post.id}/comments`);
+        if (commentsResponse.ok) {
+          const comments = await commentsResponse.json();
+          commentCount = comments.length;
+        }
+      } catch (error) {
+        console.error(`Fehler beim Laden der Kommentaranzahl für Post ${post.id}:`, error);
+      }
+      
       const postEl = document.createElement('div')
       postEl.className = 'post box'
       postEl.innerHTML = `
@@ -190,7 +221,7 @@ async function loadPosts() {
     <!-- Kommentarbereich hinzufügen -->
     <div class="comments-section">
       <div class="comments-toggle" onclick="toggleComments(${post.id})">
-        <i class="fas fa-comment"></i> Kommentare (<span id="comment-count-${post.id}">0</span>)
+        <i class="fas fa-comment"></i> Kommentare (<span id="comment-count-${post.id}">${commentCount}</span>)
       </div>
       
       <div id="comments-container-${post.id}" class="comments-container" style="display: none;">
@@ -205,8 +236,14 @@ async function loadPosts() {
       </div>
     </div>
   `
-      postsContainer.appendChild(postEl)
-    })
+      return postEl;
+    }));
+    
+    // Alle Posts zum Container hinzufügen
+    renderedPosts.forEach(postEl => {
+      postsContainer.appendChild(postEl);
+    });
+    
   } catch (error) {
     console.error('Fehler beim Laden der Beiträge:', error)
     postsContainer.innerHTML =
@@ -333,7 +370,7 @@ async function addComment(postId) {
     loadComments(postId);
   } catch (error) {
     console.error('Fehler beim Erstellen des Kommentars:', error);
-    showNotification(error.message || 'Fehler beim Erstellen des Kommentars', 'error');
+    alert(error.message || 'Fehler beim Erstellen des Kommentars');
   }
 }
 
@@ -366,6 +403,69 @@ logoutButton.addEventListener('click', () => {
   localStorage.removeItem('token')
   window.location.href = 'index.html'
 })
+
+// Kommentar löschen
+async function deleteComment(commentId, postId) {
+  if (!confirm('Möchtest du diesen Kommentar wirklich löschen?')) return;
+
+  try {
+    const response = await sendAuthorizedApiRequest(
+      `/api/comments/${commentId}`,
+      'DELETE'
+    );
+
+    if (response.ok) {
+      // Kommentare neu laden
+      loadComments(postId);
+    } else {
+      const error = await response.json();
+      alert(`Fehler beim Löschen: ${error.error || 'Unbekannter Fehler'}`);
+    }
+  } catch (error) {
+    console.error('Fehler beim Löschen des Kommentars:', error);
+    alert('Fehler beim Löschen des Kommentars. Bitte versuche es später erneut.');
+  }
+}
+
+// Kommentar-Modal öffnen
+function editComment(commentId, content, postId) {
+  editCommentId.value = commentId;
+  editCommentContent.value = content;
+  editCommentPostId.value = postId;
+  editCommentModal.style.display = 'block';
+}
+
+// Kommentar speichern
+async function saveCommentEdit() {
+  const editCommentModal = document.getElementById('editCommentModal');
+  const commentId = document.getElementById('editCommentId').value;
+  const content = document.getElementById('editCommentContent').value.trim();
+  const postId = document.getElementById('editCommentPostId').value;
+
+  if (!content) {
+    alert('Bitte Inhalt eingeben!');
+    return;
+  }
+
+  try {
+    const response = await sendAuthorizedApiRequest(
+      `/api/comments/${commentId}`,
+      'PUT',
+      JSON.stringify({ content })
+    );
+
+    if (response.ok) {
+      editCommentModal.style.display = 'none';
+      loadComments(postId);
+    } else {
+      const error = await response.json();
+      alert(`Fehler beim Bearbeiten: ${error.error || 'Unbekannter Fehler'}`);
+    }
+  } catch (error) {
+    console.error('Fehler beim Bearbeiten des Kommentars:', error);
+    alert('Fehler beim Bearbeiten des Kommentars. Bitte versuche es später erneut.');
+  }
+}
 
 // Beiträge beim Laden der Seite anzeigen
 document.addEventListener('DOMContentLoaded', () => {
