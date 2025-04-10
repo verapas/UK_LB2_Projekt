@@ -58,7 +58,7 @@ postButton.addEventListener('click', async () => {
 
     if (response.ok) {
       postContent.value = ''
-      loadPosts()
+      await loadPosts()
     } else {
       const error = await response.json()
       alert(`Fehler beim Erstellen: ${error.error || 'Unbekannter Fehler'}`)
@@ -94,7 +94,7 @@ saveEditButton.addEventListener('click', async () => {
 
     if (response.ok) {
       editModal.style.display = 'none'
-      loadPosts()
+      await loadPosts()
     } else {
       const error = await response.json()
       alert(`Fehler beim Bearbeiten: ${error.error || 'Unbekannter Fehler'}`)
@@ -118,7 +118,7 @@ async function deletePost(postId) {
     )
 
     if (response.ok) {
-      loadPosts()
+      await loadPosts()
     } else {
       const error = await response.json()
       alert(`Fehler beim Löschen: ${error.error || 'Unbekannter Fehler'}`)
@@ -200,13 +200,15 @@ async function loadPosts() {
 async function vote(postId, isLike) {
   try {
     const response = await sendAuthorizedApiRequest(
-      `${API_POSTS_URL}/${postId}/vote`,
-      'POST',
-      JSON.stringify({ isLike })
+      isLike
+        ? `${API_POSTS_URL}/${postId}/like`
+        : `${API_POSTS_URL}/${postId}/dislike`,
+      'POST'
     )
 
+
     if (response.ok) {
-      loadPosts()
+      await loadPosts()
     } else {
       const error = await response.json()
       console.error('Fehler beim Abstimmen:', error)
