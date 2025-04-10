@@ -125,6 +125,20 @@ export class API {
       this.authenticateToken.bind(this),
       this.likePost.bind(this)
     )
+
+    this.app.put(
+      '/api/users/:id',
+      this.authenticateToken.bind(this),
+      [
+        body('username')
+          .isLength({ min: 3 })
+          .withMessage('Benutzername muss mindestens 3 Zeichen lang sein'),
+        body('currentPassword')
+          .notEmpty()
+          .withMessage('Aktuelles Passwort ist erforderlich'),
+      ],
+      this.updateUser.bind(this)
+    );
   }
 
   // Authentication middleware
@@ -233,11 +247,9 @@ export class API {
   private async getPosts(_: AuthenticatedRequest, res: Response) {
     try {
       const query = `
-        SELECT
-          p.*,
-          u.username,
-          CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = true) AS CHAR) as likes,
-          CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = false) AS CHAR) as dislikes
+        SELECT p.*, u.username,
+               CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = true) AS CHAR) as likes,
+               CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = false) AS CHAR) as dislikes
         FROM posts p
                JOIN users u ON p.user_id = u.id
         ORDER BY p.created_at DESC
@@ -251,7 +263,7 @@ export class API {
     }
   }
 
-  private getAllPostsByUserId = async (req: Request, res: Response) => {
+  private getAllPostsByUserId = async (_: Request, res: Response) => {
     try {
       const result = await db.executeSQL<Post>(
         'SELECT * FROM posts ORDER BY created_at DESC'
@@ -374,7 +386,7 @@ export class API {
 
       // create Comment
       const query = `INSERT INTO comments (content, user_id, post_id, created_at)
-                   VALUES (?, ?, ?, NOW())`;
+                     VALUES (?, ?, ?, NOW())`;
       const result = await db.executeSQL(query, [content, user.id, postId]);
 
       res.status(201).json({
@@ -399,7 +411,13 @@ export class API {
       const user = req.user;
 
       // check if comment exists
-      const comment = await db.executeSQL<{id: number, content: string, user_id: number, post_id: number, created_at: Date}>(
+      const comment = await db.executeSQL<{
+        id: number,
+        content: string,
+        user_id: number,
+        post_id: number,
+        created_at: Date
+      }>(
         'SELECT * FROM comments WHERE id = ?',
         [commentId]
       );
@@ -429,13 +447,20 @@ export class API {
     }
 
   }
+
   private async deleteComment(req: AuthenticatedRequest, res: Response) {
     try {
       const commentId = req.params.id;
       const user = req.user;
 
       // check if comment exist
-      const comment = await db.executeSQL<{id: number, content: string, user_id: number, post_id: number, created_at: Date}>(
+      const comment = await db.executeSQL<{
+        id: number,
+        content: string,
+        user_id: number,
+        post_id: number,
+        created_at: Date
+      }>(
         'SELECT * FROM comments WHERE id = ?',
         [commentId]
       );
@@ -481,12 +506,12 @@ export class API {
 
       // get comments and related user-name
       const query = `
-      SELECT c.*, u.username
-      FROM comments c
-      JOIN users u ON c.user_id = u.id
-      WHERE c.post_id = ?
-      ORDER BY c.created_at ASC
-    `;
+        SELECT c.*, u.username
+        FROM comments c
+               JOIN users u ON c.user_id = u.id
+        WHERE c.post_id = ?
+        ORDER BY c.created_at
+      `;
 
       const comments = await db.executeSQL(query, [postId]);
       res.json(comments);
@@ -495,6 +520,7 @@ export class API {
       res.status(500).json({ error: 'Interner Serverfehler' });
     }
   }
+
   private likePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id;
     const userId = req.user.id; // The logged-in user
@@ -509,7 +535,7 @@ export class API {
         VALUES (?, ?, true)
         ON DUPLICATE KEY UPDATE is_like = true
       `;
-      await db.executeSQL(sql, [userId, postId]);
+      await db.executeSQL(sql, [userId.toString(), postId]);
 
       res.status(200).json({ message: 'Post liked' });
     } catch (err) {
@@ -527,16 +553,99 @@ export class API {
 
     try {
       const sql = `
-      INSERT INTO likes (user_id, post_id, is_like)
-      VALUES (?, ?, false)
-      ON DUPLICATE KEY UPDATE is_like = false
-    `;
-      await db.executeSQL(sql, [userId, postId]);
+        INSERT INTO likes (user_id, post_id, is_like)
+        VALUES (?, ?, false)
+        ON DUPLICATE KEY UPDATE is_like = false
+      `;
+      await db.executeSQL(sql, [userId.toString(), postId]);
 
       res.status(200).json({ message: 'Post disliked' });
     } catch (err) {
       console.error('Error when disliking:', err);
       res.status(500).json({ error: 'Error when disliking post' });
+    }
+  }
+
+  private async updateUser(req: AuthenticatedRequest, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+      }
+
+      const userId = req.params.id;
+      const { username, currentPassword, newPassword } = req.body;
+
+      // Benutzer aus der Datenbank abrufen
+      const userQuery = `SELECT *
+                         FROM users
+                         WHERE id = ?`;
+      const users = await db.executeSQL<User>(userQuery, [userId]);
+
+      if (!Array.isArray(users) || users.length === 0) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      const user = users[0];
+
+      // Überprüfe das aktuelle Passwort
+      const passwordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!passwordValid) {
+        return res.status(401).json({ error: 'Aktuelles Passwort ist falsch' });
+      }
+
+      // Prüfe, ob der neue Benutzername bereits vergeben ist
+      if (username !== user.username) {
+        const checkUsernameQuery = `SELECT *
+                                    FROM users
+                                    WHERE username = ?
+                                      AND id != ?`;
+        const existingUsers = await db.executeSQL<User>(checkUsernameQuery, [username, userId]);
+
+        if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+          return res.status(400).json({ error: 'Benutzername bereits vergeben' });
+        }
+      }
+
+      // Update ausführen
+      let updateQuery: string, params: string[];
+      if (newPassword) {
+        if (newPassword.length < 6) {
+          return res.status(400).json({ error: 'Neues Passwort muss mindestens 6 Zeichen lang sein' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        updateQuery = `UPDATE users
+                       SET username = ?,
+                           password = ?
+                       WHERE id = ?`;
+        params = [username, hashedPassword, userId];
+      } else {
+        updateQuery = `UPDATE users
+                       SET username = ?
+                       WHERE id = ?`;
+        params = [username, userId];
+      }
+
+      await db.executeSQL(updateQuery, params);
+
+      // Neues Token erstellen
+      const token = jwt.sign(
+        { id: user.id, username: username, role: user.role },
+        secretKey,
+        { expiresIn: '1h' }
+      );
+
+      res.json({
+        message: 'Profil erfolgreich aktualisiert',
+        token,
+        username,
+        id: user.id,
+        role: user.role
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
     }
   }
 }
