@@ -89,6 +89,32 @@ export class API {
       this.authenticateToken.bind(this),
       this.deletePost.bind(this)
     )
+    this.app.post(
+      '/api/posts/:id/comments',
+      this.authenticateToken.bind(this),
+      [body('content').notEmpty().withMessage('Kommentarinhalt darf nicht leer sein')],
+      this.createComment.bind(this)
+    );
+
+    this.app.put(
+      '/api/comments/:id',
+      this.authenticateToken.bind(this),
+      [body('content').notEmpty().withMessage('Kommentarinhalt darf nicht leer sein')],
+      this.updateComment.bind(this)
+    );
+
+    this.app.delete(
+      '/api/comments/:id',
+      this.authenticateToken.bind(this),
+      this.deleteComment.bind(this)
+    );
+
+    this.app.get(
+      '/api/posts/:id/comments',
+      this.authenticateToken.bind(this),
+      this.getCommentsByPostId.bind(this)
+    );
+
   }
 
   // Authentication middleware
@@ -308,6 +334,151 @@ export class API {
       res
         .status(500)
         .json({ error: 'An error occurred while deleting the post' })
+    }
+  }
+
+  private async createComment(req: AuthenticatedRequest, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+      }
+
+      const postId = req.params.id;
+      const { content } = req.body;
+      const user = req.user;
+
+      // Check if Post exists
+      const post = await db.executeSQL<Post>(
+        'SELECT * FROM posts WHERE id = ?',
+        [postId]
+      );
+
+      if (!post || (Array.isArray(post) && post.length === 0)) {
+        return res.status(404).json({ error: 'Beitrag nicht gefunden' });
+      }
+
+      // create Comment
+      const query = `INSERT INTO comments (content, user_id, post_id, created_at)
+                   VALUES (?, ?, ?, NOW())`;
+      const result = await db.executeSQL(query, [content, user.id, postId]);
+
+      res.status(201).json({
+        status: 'created',
+        commentId: Array.isArray(result) ? null : result.insertId
+      });
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
+  }
+
+  private async updateComment(req: AuthenticatedRequest, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors.array()[0].msg });
+      }
+
+      const commentId = req.params.id;
+      const { content } = req.body;
+      const user = req.user;
+
+      // check if comment exists
+      const comment = await db.executeSQL<{id: number, content: string, user_id: number, post_id: number, created_at: Date}>(
+        'SELECT * FROM comments WHERE id = ?',
+        [commentId]
+      );
+
+      if (!comment || (Array.isArray(comment) && comment.length === 0)) {
+        return res.status(404).json({ error: 'Kommentar nicht gefunden' });
+      }
+
+      // role-based access control
+      if (Array.isArray(comment) &&
+        comment[0].user_id !== user.id &&
+        user.role !== 'admin' &&
+        user.role !== 'moderator') {
+        return res.status(403).json({ error: 'Keine Berechtigung zum Bearbeiten dieses Kommentars' });
+      }
+
+      // update comment
+      const result = await db.executeSQL(
+        'UPDATE comments SET content = ? WHERE id = ?',
+        [content, commentId]
+      );
+
+      res.status(200).json({ message: 'Kommentar aktualisiert', result });
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
+
+  }
+  private async deleteComment(req: AuthenticatedRequest, res: Response) {
+    try {
+      const commentId = req.params.id;
+      const user = req.user;
+
+      // check if comment exist
+      const comment = await db.executeSQL<{id: number, content: string, user_id: number, post_id: number, created_at: Date}>(
+        'SELECT * FROM comments WHERE id = ?',
+        [commentId]
+      );
+
+      if (!comment || (Array.isArray(comment) && comment.length === 0)) {
+        return res.status(404).json({ error: 'Kommentar nicht gefunden' });
+      }
+
+      // role based validation
+      if (Array.isArray(comment) &&
+        comment[0].user_id !== user.id &&
+        user.role !== 'admin' &&
+        user.role !== 'moderator') {
+        return res.status(403).json({ error: 'Keine Berechtigung zum Löschen dieses Kommentars' });
+      }
+
+      // delete comment
+      const result = await db.executeSQL(
+        'DELETE FROM comments WHERE id = ?',
+        [commentId]
+      );
+
+      res.status(200).json({ message: 'Kommentar gelöscht', result });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
+    }
+  }
+
+  private async getCommentsByPostId(req: AuthenticatedRequest, res: Response) {
+    try {
+      const postId = req.params.id;
+
+      // check if post exists
+      const post = await db.executeSQL<Post>(
+        'SELECT * FROM posts WHERE id = ?',
+        [postId]
+      );
+
+      if (!post || (Array.isArray(post) && post.length === 0)) {
+        return res.status(404).json({ error: 'Beitrag nicht gefunden' });
+      }
+
+      // get comments and related user-name
+      const query = `
+      SELECT c.*, u.username
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at ASC
+    `;
+
+      const comments = await db.executeSQL(query, [postId]);
+      res.json(comments);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ error: 'Interner Serverfehler' });
     }
   }
 }

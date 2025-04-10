@@ -31,7 +31,7 @@ class Database {
     await this.executeSQL(LIKE_TABLE)
   }
 
-  public executeSQL = async <T = never>(
+  public executeSQL = async <T>(
     query: string,
     params: string[] = []
   ): Promise<T[] | mysql.ResultSetHeader> => {
