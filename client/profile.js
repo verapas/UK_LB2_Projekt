@@ -47,13 +47,13 @@ saveProfileButton.addEventListener('click', async () => {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
         username,
         currentPassword,
-        newPassword: newPassword || undefined
-      })
+        newPassword: newPassword || undefined,
+      }),
     })
 
     if (!response.ok) {
@@ -78,7 +78,6 @@ saveProfileButton.addEventListener('click', async () => {
     setTimeout(() => {
       window.location.href = 'home.html'
     }, 2000)
-
   } catch (error) {
     console.error('Fehler beim Aktualisieren des Profils:', error)
     showError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.')
@@ -94,12 +93,13 @@ function showError(message, isError = true) {
 // Beiträge des Benutzers laden
 async function loadUserPosts() {
   try {
-    userPostsContainer.innerHTML = '<div class="loading">Beiträge werden geladen...</div>'
+    userPostsContainer.innerHTML =
+      '<div class="loading">Beiträge werden geladen...</div>'
 
     const response = await fetch(`${API_URL}/posts?userId=${currentUser.id}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
     })
 
     if (!response.ok) {
@@ -111,11 +111,12 @@ async function loadUserPosts() {
     userPostsContainer.innerHTML = ''
 
     if (posts.length === 0) {
-      userPostsContainer.innerHTML = '<p class="no-posts">Du hast noch keine Beiträge erstellt.</p>'
+      userPostsContainer.innerHTML =
+        '<p class="no-posts">Du hast noch keine Beiträge erstellt.</p>'
       return
     }
 
-    posts.forEach(post => {
+    posts.forEach((post) => {
       const postEl = document.createElement('div')
       postEl.className = 'post'
       postEl.innerHTML = `
@@ -134,7 +135,8 @@ async function loadUserPosts() {
     })
   } catch (error) {
     console.error('Fehler beim Laden der Beiträge:', error)
-    userPostsContainer.innerHTML = '<p class="error">Fehler beim Laden der Beiträge.</p>'
+    userPostsContainer.innerHTML =
+      '<p class="error">Fehler beim Laden der Beiträge.</p>'
   }
 }
 
@@ -146,7 +148,7 @@ function formatDate(dateString) {
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 

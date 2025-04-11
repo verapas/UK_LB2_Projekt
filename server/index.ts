@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express'
 import { API } from './api'
 import http from 'http'
-import { resolve, dirname } from 'path'
+import { dirname, resolve } from 'path'
 
 class Backend {
   // Properties

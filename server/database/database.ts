@@ -56,7 +56,10 @@ class Database {
     // Create posts
     await this.executeSQL(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
-      ['1', 'Hallo :) ich bin ein Benutzer mit der Rolle "user" und mache einen Post. und du so?']
+      [
+        '1',
+        'Hallo :) ich bin ein Benutzer mit der Rolle "user" und mache einen Post. und du so?',
+      ]
     )
     await this.executeSQL(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
@@ -64,7 +67,10 @@ class Database {
     )
     await this.executeSQL(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
-      ['3', 'Als Administrator kann ich nicht nur eure Kommentare löschen, sondern eure Profile sogar deaktivieren!']
+      [
+        '3',
+        'Als Administrator kann ich nicht nur eure Kommentare löschen, sondern eure Profile sogar deaktivieren!',
+      ]
     )
 
     // Create comments
@@ -78,7 +84,11 @@ class Database {
     )
     await this.executeSQL(
       'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
-      ['1', '3', 'Hallo :) freut mich das du unsre Platform nutzt um diesen Kommentar zu schreiben']
+      [
+        '1',
+        '3',
+        'Hallo :) freut mich das du unsre Platform nutzt um diesen Kommentar zu schreiben',
+      ]
     )
   }
 

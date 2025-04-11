@@ -169,27 +169,33 @@ async function loadPosts() {
     }
 
     // Alle Posts erstellen
-    const renderedPosts = await Promise.all(posts.map(async (post) => {
-      const isOwner =
-        post.user_id === currentUser.id ||
-        currentUser.role === 'admin' ||
-        currentUser.role === 'moderator'
-      
-      // Kommentare im Voraus laden
-      let commentCount = 0;
-      try {
-        const commentsResponse = await sendAuthorizedApiRequest(`${API_POSTS_URL}/${post.id}/comments`);
-        if (commentsResponse.ok) {
-          const comments = await commentsResponse.json();
-          commentCount = comments.length;
+    const renderedPosts = await Promise.all(
+      posts.map(async (post) => {
+        const isOwner =
+          post.user_id === currentUser.id ||
+          currentUser.role === 'admin' ||
+          currentUser.role === 'moderator'
+
+        // Kommentare im Voraus laden
+        let commentCount = 0
+        try {
+          const commentsResponse = await sendAuthorizedApiRequest(
+            `${API_POSTS_URL}/${post.id}/comments`
+          )
+          if (commentsResponse.ok) {
+            const comments = await commentsResponse.json()
+            commentCount = comments.length
+          }
+        } catch (error) {
+          console.error(
+            `Fehler beim Laden der Kommentaranzahl für Post ${post.id}:`,
+            error
+          )
         }
-      } catch (error) {
-        console.error(`Fehler beim Laden der Kommentaranzahl für Post ${post.id}:`, error);
-      }
-      
-      const postEl = document.createElement('div')
-      postEl.className = 'post box'
-      postEl.innerHTML = `
+
+        const postEl = document.createElement('div')
+        postEl.className = 'post box'
+        postEl.innerHTML = `
     <div class="post-header">
       <span class="post-author">@${post.username || 'Benutzer ' + post.user_id}</span>
       <small class="post-date">${formatDate(post.created_at || new Date())}</small>
@@ -236,14 +242,14 @@ async function loadPosts() {
       </div>
     </div>
   `
-      return postEl;
-    }));
-    
+        return postEl
+      })
+    )
+
     // Alle Posts zum Container hinzufügen
-    renderedPosts.forEach(postEl => {
-      postsContainer.appendChild(postEl);
-    });
-    
+    renderedPosts.forEach((postEl) => {
+      postsContainer.appendChild(postEl)
+    })
   } catch (error) {
     console.error('Fehler beim Laden der Beiträge:', error)
     postsContainer.innerHTML =
@@ -261,7 +267,6 @@ async function vote(postId, isLike) {
       'POST'
     )
 
-
     if (response.ok) {
       await loadPosts()
     } else {
@@ -273,49 +278,54 @@ async function vote(postId, isLike) {
   }
 }
 
-
 // Kommentare ein-/ausblenden
 function toggleComments(postId) {
-  const commentsContainer = document.getElementById(`comments-container-${postId}`);
+  const commentsContainer = document.getElementById(
+    `comments-container-${postId}`
+  )
   if (commentsContainer.style.display === 'none') {
-    commentsContainer.style.display = 'block';
-    loadComments(postId);
+    commentsContainer.style.display = 'block'
+    loadComments(postId)
   } else {
-    commentsContainer.style.display = 'none';
+    commentsContainer.style.display = 'none'
   }
 }
 
 // Kommentare laden
 async function loadComments(postId) {
-  const commentsList = document.getElementById(`comments-list-${postId}`);
-  const commentCount = document.getElementById(`comment-count-${postId}`);
+  const commentsList = document.getElementById(`comments-list-${postId}`)
+  const commentCount = document.getElementById(`comment-count-${postId}`)
 
-  commentsList.innerHTML = '<div class="loading">Kommentare werden geladen...</div>';
+  commentsList.innerHTML =
+    '<div class="loading">Kommentare werden geladen...</div>'
 
   try {
-    const response = await sendAuthorizedApiRequest(`${API_POSTS_URL}/${postId}/comments`);
+    const response = await sendAuthorizedApiRequest(
+      `${API_POSTS_URL}/${postId}/comments`
+    )
 
     if (!response.ok) {
-      throw new Error('Fehler beim Laden der Kommentare');
+      throw new Error('Fehler beim Laden der Kommentare')
     }
 
-    const comments = await response.json();
-    commentsList.innerHTML = '';
-    commentCount.textContent = comments.length;
+    const comments = await response.json()
+    commentsList.innerHTML = ''
+    commentCount.textContent = comments.length
 
     if (comments.length === 0) {
-      commentsList.innerHTML = '<div class="no-posts">Keine Kommentare vorhanden. Sei der Erste!</div>';
-      return;
+      commentsList.innerHTML =
+        '<div class="no-posts">Keine Kommentare vorhanden. Sei der Erste!</div>'
+      return
     }
 
-    comments.forEach(comment => {
+    comments.forEach((comment) => {
       const isCommentOwner =
         comment.user_id === currentUser.id ||
         currentUser.role === 'admin' ||
-        currentUser.role === 'moderator';
+        currentUser.role === 'moderator'
 
-      const commentEl = document.createElement('div');
-      commentEl.className = 'comment';
+      const commentEl = document.createElement('div')
+      commentEl.className = 'comment'
       commentEl.innerHTML = `
         <div class="comment-header">
           <span class="comment-author">@${comment.username}</span>
@@ -324,7 +334,9 @@ async function loadComments(postId) {
         <div class="comment-content">
           <p>${comment.content}</p>
         </div>
-        ${isCommentOwner ? `
+        ${
+          isCommentOwner
+            ? `
         <div class="comment-actions">
           <button onclick="editComment(${comment.id}, '${escapeJS(comment.content)}', ${postId})" class="icon-button edit-button">
             <i class="fas fa-edit"></i>
@@ -333,24 +345,27 @@ async function loadComments(postId) {
             <i class="fas fa-trash"></i>
           </button>
         </div>
-        ` : ''}
-      `;
-      commentsList.appendChild(commentEl);
-    });
+        `
+            : ''
+        }
+      `
+      commentsList.appendChild(commentEl)
+    })
   } catch (error) {
-    console.error('Fehler beim Laden der Kommentare:', error);
-    commentsList.innerHTML = '<div class="error">Fehler beim Laden der Kommentare.</div>';
+    console.error('Fehler beim Laden der Kommentare:', error)
+    commentsList.innerHTML =
+      '<div class="error">Fehler beim Laden der Kommentare.</div>'
   }
 }
 
 // Kommentar hinzufügen
 async function addComment(postId) {
-  const commentInput = document.getElementById(`comment-input-${postId}`);
-  const content = commentInput.value.trim();
+  const commentInput = document.getElementById(`comment-input-${postId}`)
+  const content = commentInput.value.trim()
 
   if (!content) {
-    alert('Bitte gib einen Kommentar ein!');
-    return;
+    alert('Bitte gib einen Kommentar ein!')
+    return
   }
 
   try {
@@ -358,21 +373,21 @@ async function addComment(postId) {
       `${API_POSTS_URL}/${postId}/comments`,
       'POST',
       JSON.stringify({ content })
-    );
+    )
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Fehler beim Erstellen des Kommentars');
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Fehler beim Erstellen des Kommentars')
     }
 
     // Kommentarfeld zurücksetzen
-    commentInput.value = '';
+    commentInput.value = ''
 
     // Kommentare neu laden
-    loadComments(postId);
+    loadComments(postId)
   } catch (error) {
-    console.error('Fehler beim Erstellen des Kommentars:', error);
-    alert(error.message || 'Fehler beim Erstellen des Kommentars');
+    console.error('Fehler beim Erstellen des Kommentars:', error)
+    alert(error.message || 'Fehler beim Erstellen des Kommentars')
   }
 }
 
@@ -408,45 +423,47 @@ logoutButton.addEventListener('click', () => {
 
 // Kommentar löschen
 async function deleteComment(commentId, postId) {
-  if (!confirm('Möchtest du diesen Kommentar wirklich löschen?')) return;
+  if (!confirm('Möchtest du diesen Kommentar wirklich löschen?')) return
 
   try {
     const response = await sendAuthorizedApiRequest(
       `/api/comments/${commentId}`,
       'DELETE'
-    );
+    )
 
     if (response.ok) {
       // Kommentare neu laden
-      loadComments(postId);
+      loadComments(postId)
     } else {
-      const error = await response.json();
-      alert(`Fehler beim Löschen: ${error.error || 'Unbekannter Fehler'}`);
+      const error = await response.json()
+      alert(`Fehler beim Löschen: ${error.error || 'Unbekannter Fehler'}`)
     }
   } catch (error) {
-    console.error('Fehler beim Löschen des Kommentars:', error);
-    alert('Fehler beim Löschen des Kommentars. Bitte versuche es später erneut.');
+    console.error('Fehler beim Löschen des Kommentars:', error)
+    alert(
+      'Fehler beim Löschen des Kommentars. Bitte versuche es später erneut.'
+    )
   }
 }
 
 // Kommentar-Modal öffnen
 function editComment(commentId, content, postId) {
-  editCommentId.value = commentId;
-  editCommentContent.value = content;
-  editCommentPostId.value = postId;
-  editCommentModal.style.display = 'block';
+  editCommentId.value = commentId
+  editCommentContent.value = content
+  editCommentPostId.value = postId
+  editCommentModal.style.display = 'block'
 }
 
 // Kommentar speichern
 async function saveCommentEdit() {
-  const editCommentModal = document.getElementById('editCommentModal');
-  const commentId = document.getElementById('editCommentId').value;
-  const content = document.getElementById('editCommentContent').value.trim();
-  const postId = document.getElementById('editCommentPostId').value;
+  const editCommentModal = document.getElementById('editCommentModal')
+  const commentId = document.getElementById('editCommentId').value
+  const content = document.getElementById('editCommentContent').value.trim()
+  const postId = document.getElementById('editCommentPostId').value
 
   if (!content) {
-    alert('Bitte Inhalt eingeben!');
-    return;
+    alert('Bitte Inhalt eingeben!')
+    return
   }
 
   try {
@@ -454,18 +471,20 @@ async function saveCommentEdit() {
       `/api/comments/${commentId}`,
       'PUT',
       JSON.stringify({ content })
-    );
+    )
 
     if (response.ok) {
-      editCommentModal.style.display = 'none';
-      loadComments(postId);
+      editCommentModal.style.display = 'none'
+      loadComments(postId)
     } else {
-      const error = await response.json();
-      alert(`Fehler beim Bearbeiten: ${error.error || 'Unbekannter Fehler'}`);
+      const error = await response.json()
+      alert(`Fehler beim Bearbeiten: ${error.error || 'Unbekannter Fehler'}`)
     }
   } catch (error) {
-    console.error('Fehler beim Bearbeiten des Kommentars:', error);
-    alert('Fehler beim Bearbeiten des Kommentars. Bitte versuche es später erneut.');
+    console.error('Fehler beim Bearbeiten des Kommentars:', error)
+    alert(
+      'Fehler beim Bearbeiten des Kommentars. Bitte versuche es später erneut.'
+    )
   }
 }
 
