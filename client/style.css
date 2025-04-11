@@ -140,7 +140,7 @@ textarea {
   border-radius: 12px;
 }
 
-.posts-container .post {
+.posts-container  {
   padding: 0;
 }
 
@@ -470,6 +470,7 @@ input[type="password"] {
 
 .comments-container {
   margin-top: 0.5rem;
+  padding: 0.5rem
 }
 
 .comments-list {
