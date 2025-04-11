@@ -12,6 +12,7 @@
   <div class="header-content">
     <h1 class="title">MiniTwitter</h1>
     <div class="user-profile">
+      <button id="deleteButton" class="action-button">User sperren</button>
       <span>Schön das du da bist <a href="profile.html" id="username">...</a></span>
       <a href="profile.html" class="profile-button"><i class="fas fa-user"></i></a>
     </div>
@@ -30,6 +31,16 @@
   <div class="posts-container" id="postsContainer">
     <!-- Beiträge werden hier dynamisch eingefügt -->
   </div>
+
+  <!-- Modal für Benutzer sperren -->
+  <div id="userManagementModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="closeUserManagementModal">&times;</span>
+      <h2>User sperren</h2>
+      <input type="text" id="userSearchInput" placeholder="Benutzer suchen..." />
+      <div id="userListContainer">
+      </div>
+    </div>
 </main>
 
 <!-- Bearbeiten-Modal für Posts -->

@@ -488,6 +488,92 @@ async function saveCommentEdit() {
   }
 }
 
+// Hole Referenzen zu den Elementen des User Managements
+const userManagementModal = document.getElementById('userManagementModal');
+const closeUserManagementModal = document.getElementById('closeUserManagementModal');
+const userSearchInput = document.getElementById('userSearchInput');
+let allUsers = []; // Hier werden alle Benutzer zwischengespeichert
+
+// Öffne das User Management Modal, wenn der Button geklickt wird
+document.getElementById('deleteButton').addEventListener('click', () => {
+  userManagementModal.style.display = 'block';
+  loadUsers();
+});
+
+// Schließe das Modal, wenn das Schließ-Symbol angeklickt wird
+closeUserManagementModal.addEventListener('click', () => {
+  userManagementModal.style.display = 'none';
+});
+
+// Schließe das Modal, wenn außerhalb des Modals geklickt wird
+window.addEventListener('click', (event) => {
+  if (event.target === userManagementModal) {
+    userManagementModal.style.display = 'none';
+  }
+});
+
+// Funktion zum Laden der Benutzer (API-Endpunkt anpassen, falls nötig)
+async function loadUsers() {
+  try {
+    const response = await sendAuthorizedApiRequest('/api/users'); // Passe den Endpunkt ggf. an
+    if (response.ok) {
+      allUsers = await response.json();
+      displayUsers(allUsers);
+    } else {
+      alert('Fehler beim Laden der Benutzer');
+    }
+  } catch (error) {
+    console.error('Fehler beim Laden der Benutzer:', error);
+    alert('Fehler beim Laden der Benutzer');
+  }
+}
+
+// Event-Listener für die Suchleiste - filtert die bereits geladenen Benutzer
+userSearchInput.addEventListener('input', function() {
+  const searchTerm = this.value.toLowerCase();
+  const filteredUsers = allUsers.filter(user => user.username.toLowerCase().includes(searchTerm));
+  displayUsers(filteredUsers);
+});
+
+// Funktion, um die Benutzerliste im Container darzustellen
+function displayUsers(users) {
+  const container = document.getElementById('userListContainer');
+  container.innerHTML = '';
+
+  if (users.length === 0) {
+    container.innerHTML = '<p>Keine Benutzer gefunden</p>';
+    return;
+  }
+
+  users.forEach(user => {
+    const userDiv = document.createElement('div');
+    userDiv.className = 'user-item';
+    userDiv.innerHTML = `
+      <span>${user.username}</span>
+      <button onclick="blockUser(${user.id})" class="action-button">Sperren</button>
+    `;
+    container.appendChild(userDiv);
+  });
+}
+
+// Funktion, um einen Benutzer zu sperren
+async function blockUser(userId) {
+  if (!confirm('Möchtest du diesen Benutzer wirklich sperren?')) return;
+  try {
+    const response = await sendAuthorizedApiRequest(`/api/users/${userId}/block`, 'POST');
+    if (response.ok) {
+      alert('Benutzer wurde gesperrt');
+      loadUsers(); // Liste neuladen, um die Änderung anzuzeigen
+    } else {
+      const errorData = await response.json();
+      alert('Fehler beim Sperren: ' + (errorData.error || 'Unbekannter Fehler'));
+    }
+  } catch (error) {
+    console.error('Fehler beim Sperren des Benutzers:', error);
+    alert('Fehler beim Sperren des Benutzers');
+  }
+}
+
 // Beiträge beim Laden der Seite anzeigen
 document.addEventListener('DOMContentLoaded', () => {
   loadPosts()
