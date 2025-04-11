@@ -30,7 +30,7 @@ services:
       - MYSQL_ROOT_PASSWORD=supersecret123
     ports:
       - 9200:80
-      
+
   application:
     build:
       context: .
