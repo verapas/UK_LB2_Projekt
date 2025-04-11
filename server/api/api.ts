@@ -571,7 +571,7 @@ export class API {
       const userQuery = `SELECT *
                          FROM users
                          WHERE id = ?`
-      const users = await db.executeSQL<User>(userQuery, [userId])
+      const users = await db.executeSQL<User>(userQuery, [userId.toString()])
 
       if (!Array.isArray(users) || users.length === 0) {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' })
