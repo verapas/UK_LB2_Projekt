@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise'
 import { COMMENT_TABLE, LIKE_TABLE, POST_TABLE, USER_TABLE } from './schema'
+import bcrypt from 'bcrypt'
 
 class Database {
   // Properties
@@ -24,11 +25,61 @@ class Database {
 
   // Methods
   private initializeDBSchema = async () => {
-    console.log('Initializing DB schema...')
+    // Drop tables if they exist
+    await this.executeSQL('DROP TABLE IF EXISTS likes')
+    await this.executeSQL('DROP TABLE IF EXISTS comments')
+    await this.executeSQL('DROP TABLE IF EXISTS posts')
+    await this.executeSQL('DROP TABLE IF EXISTS users')
+
+    // Create tables
     await this.executeSQL(USER_TABLE)
     await this.executeSQL(POST_TABLE)
     await this.executeSQL(COMMENT_TABLE)
     await this.executeSQL(LIKE_TABLE)
+
+    // Seed data
+    // Create users
+    const hashedPassword = await bcrypt.hash('123456', 10)
+    await this.executeSQL(
+      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      ['user', hashedPassword, 'user']
+    )
+    await this.executeSQL(
+      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      ['moderator', hashedPassword, 'moderator']
+    )
+    await this.executeSQL(
+      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      ['admin', hashedPassword, 'admin']
+    )
+
+    // Create posts
+    await this.executeSQL(
+      'INSERT INTO posts (user_id, content) VALUES (?, ?)',
+      ['1', 'Hallo :) ich bin ein Benutzer mit der Rolle "user" und mache einen Post. und du so?']
+    )
+    await this.executeSQL(
+      'INSERT INTO posts (user_id, content) VALUES (?, ?)',
+      ['2', 'Ich bin ein Moderator und kann all euer Post bearbeiten!']
+    )
+    await this.executeSQL(
+      'INSERT INTO posts (user_id, content) VALUES (?, ?)',
+      ['3', 'Als Administrator kann ich nicht nur eure Kommentare löschen, sondern eure Profile sogar deaktivieren!']
+    )
+
+    // Create comments
+    await this.executeSQL(
+      'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
+      ['3', '1', 'Da bin ich ja voll neidisch']
+    )
+    await this.executeSQL(
+      'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
+      ['2', '2', 'Interessanter Beitrag']
+    )
+    await this.executeSQL(
+      'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
+      ['1', '3', 'Hallo :) freut mich das du unsre Platform nutzt um diesen Kommentar zu schreiben']
+    )
   }
 
   public executeSQL = async <T>(
