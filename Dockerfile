@@ -9,4 +9,4 @@ COPY . .
 EXPOSE 4200
 
 # Start the application in development mode
-CMD ["npm", "run", "dev:server"]
+CMD npm install --no-optional && npm run dev 
