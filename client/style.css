@@ -131,6 +131,10 @@ textarea {
   background-color: #1a8cd8;
 }
 
+.action-button:disabled {
+  background-color: #525252;
+}
+
 /* Post Styles */
 .post {
   width: 100%;

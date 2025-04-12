@@ -145,13 +145,19 @@ export class API {
           .notEmpty()
           .withMessage('Aktuelles Passwort ist erforderlich'),
       ],
-      this.updateUser.bind(this)
+      this.updateUserProfile.bind(this)
     )
 
     this.app.get(
       '/api/users',
       this.authenticateToken.bind(this),
       this.getUsers.bind(this)
+    )
+
+    this.app.post(
+      '/api/users/:id/block',
+      this.authenticateToken.bind(this),
+      this.blockUser.bind(this)
     )
   }
 
@@ -583,7 +589,7 @@ export class API {
     }
   }
 
-  private async updateUser(req: AuthenticatedRequest, res: Response) {
+  private async updateUserProfile(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
@@ -669,6 +675,34 @@ export class API {
       })
     } catch (error) {
       console.error('Error updating user:', error)
+      res.status(500).json({ error: 'Interner Serverfehler' })
+    }
+  }
+
+  private async blockUser(req: AuthenticatedRequest, res: Response) {
+    const userToBlockId = req.params.id;
+    try {
+      // Benutzer aus der Datenbank abrufen
+      const userQuery = `UPDATE users
+                         SET isBlocked = true
+                         WHERE id = ?`
+      const result = await db.executeSQL(userQuery, [userToBlockId])
+
+      if (Array.isArray(result)) {
+        console.error(`Unerwartetes Resultat beim Blocken von Benutzer: ${JSON.stringify(result)}`)
+        return res
+          .status(500)
+          .json({ error: `Interner Serverfehler`})
+      }
+      if (result.affectedRows !== 1) {
+        return res
+          .status(404)
+          .json({ error: `User mit id ${userToBlockId} nicht gefunden`})
+      }
+
+      res.status(200).json({ message: 'User blocked' })
+    } catch (error) {
+      console.error(`Fehler bei Blockieren von Benutzer mit id ${userToBlockId}`, error)
       res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }

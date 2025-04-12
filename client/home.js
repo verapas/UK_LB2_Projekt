@@ -564,7 +564,15 @@ function displayUsers(users) {
     userDiv.className = 'user-item'
     userDiv.innerHTML = `
       <span>${user.username}</span>
-      <button onclick="blockUser(${user.id})" class="action-button">Sperren</button>
+      ${
+        user.isBlocked ? (
+          `<button class="action-button" disabled >Gesperrt</button>`
+        ) : (
+          `<button class="action-button" onClick="blockUser(${user.id})">
+            Sperren
+          </button>`
+        )
+      }
     `
     container.appendChild(userDiv)
   })
