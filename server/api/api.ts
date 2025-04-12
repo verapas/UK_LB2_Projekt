@@ -2,7 +2,7 @@ import { Express, NextFunction, Request, Response } from 'express'
 import { body, validationResult } from 'express-validator'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { db, Post, User } from '../database'
+import { db, Post, User, UserRole } from '../database'
 
 const secretKey = process.env.SECRET_KEY || 'fallback-secret-key'
 
@@ -69,29 +69,29 @@ export class API {
     // Protected routes
     this.app.post(
       '/api/posts',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       [body('content').notEmpty().withMessage('Inhalt darf nicht leer sein')],
       this.createPost.bind(this)
     )
     this.app.get(
       '/api/posts',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       this.getPosts.bind(this)
     )
     this.app.put(
       '/api/posts/:id',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       [body('content').notEmpty().withMessage('Inhalt darf nicht leer sein')],
       this.updatePost.bind(this)
     )
     this.app.delete(
       '/api/posts/:id',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       this.deletePost.bind(this)
     )
     this.app.post(
       '/api/posts/:id/comments',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       [
         body('content')
           .notEmpty()
@@ -102,7 +102,7 @@ export class API {
 
     this.app.put(
       '/api/comments/:id',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       [
         body('content')
           .notEmpty()
@@ -113,30 +113,30 @@ export class API {
 
     this.app.delete(
       '/api/comments/:id',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       this.deleteComment.bind(this)
     )
 
     this.app.get(
       '/api/posts/:id/comments',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       this.getCommentsByPostId.bind(this)
     )
 
     this.app.post(
       '/api/posts/:id/dislike',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       this.dislikePost.bind(this)
     )
     this.app.post(
       '/api/posts/:id/like',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       this.likePost.bind(this)
     )
 
     this.app.put(
       '/api/users/:id',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware(),
       [
         body('username')
           .isLength({ min: 3 })
@@ -150,51 +150,68 @@ export class API {
 
     this.app.get(
       '/api/users',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware([UserRole.ADMIN]),
       this.getUsers.bind(this)
     )
 
     this.app.post(
       '/api/users/:id/block',
-      this.authenticateToken.bind(this),
+      this.buildAuthenticationMiddleware([UserRole.ADMIN]),
       this.blockUser.bind(this)
     )
   }
 
   // Authentication middleware
-  private authenticateToken(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ) {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
+  /**
+   * Erstellt eine middleware Funktion, die *eine* der requiredRoles voraussetzt.
+   */
+  private buildAuthenticationMiddleware(requiredRoles: UserRole[] = []) {
+    function authenticateToken(
+      req: AuthenticatedRequest,
+      res: Response,
+      next: NextFunction
+    ) {
+      const authHeader = req.headers['authorization']
+      const token = authHeader && authHeader.split(' ')[1]
 
-    if (!token) {
-      return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' })
-    }
-
-    jwt.verify(token, secretKey, async (err, payload) => {
-      if (err || !verifyJetPayloadIsMiniTwitterPayload(payload)) {
-        return res
-          .status(403)
-          .json({ error: 'Ungültiges oder abgelaufenes Token.' })
-      }
-      req.user = payload
-
-      const query = `SELECT *
-                     FROM users
-                     WHERE username = ?
-                       AND isBlocked = false`
-      const result = await db.executeSQL<User>(query, [payload.username])
-      if (!Array.isArray(result) || result.length !== 1) {
+      if (!token) {
         return res
           .status(401)
-          .json({ error: 'Request durch ungültigen User' })
+          .json({ error: 'Zugriff verweigert. Token fehlt.' })
       }
 
-      next()
-    })
+      jwt.verify(token, secretKey, async (err, payload) => {
+        if (err || !verifyJetPayloadIsMiniTwitterPayload(payload)) {
+          return res
+            .status(403)
+            .json({ error: 'Ungültiges oder abgelaufenes Token.' })
+        }
+        req.user = payload
+
+        const query = `SELECT *
+                       FROM users
+                       WHERE username = ?
+                         AND isBlocked = false`
+        const result = await db.executeSQL<User>(query, [payload.username])
+        if (!Array.isArray(result) || result.length !== 1) {
+          return res
+            .status(401)
+            .json({ error: 'Request durch ungültigen User' })
+        }
+        // user ist nicht blockiert → rollen prüfen
+        const userHasRequiredRole = requiredRoles.some(
+          (role) => result[0].role === role
+        )
+        if (!userHasRequiredRole) {
+          return res
+            .status(401)
+            .json({ error: 'Request durch ungültigen User' })
+        }
+        next()
+      })
+    }
+
+    return authenticateToken.bind(this)
   }
 
   // Register endpoint
@@ -584,7 +601,7 @@ export class API {
   private async getUsers(_: AuthenticatedRequest, res: Response) {
     try {
       // Benutzer aus der Datenbank abrufen
-      const userQuery = `SELECT *
+      const userQuery = `SELECT id, username, isBlocked
                          FROM users`
       const users = await db.executeSQL<User>(userQuery)
 

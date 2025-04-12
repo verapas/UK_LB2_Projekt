@@ -2,6 +2,12 @@ import mysql from 'mysql2/promise'
 import { COMMENT_TABLE, LIKE_TABLE, POST_TABLE, USER_TABLE } from './schema'
 import bcrypt from 'bcrypt'
 
+export enum UserRole {
+  USER = 'user',
+  MODERATOR = 'moderator',
+  ADMIN = 'admin',
+}
+
 class Database {
   // Properties
   private _pool: mysql.Pool
@@ -42,15 +48,15 @@ class Database {
     const hashedPassword = await bcrypt.hash('123456', 10)
     await this.executeSQL(
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      ['user', hashedPassword, 'user']
+      ['user', hashedPassword, UserRole.USER]
     )
     await this.executeSQL(
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      ['moderator', hashedPassword, 'moderator']
+      ['moderator', hashedPassword, UserRole.MODERATOR]
     )
     await this.executeSQL(
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      ['admin', hashedPassword, 'admin']
+      ['admin', hashedPassword, UserRole.ADMIN]
     )
 
     // Create posts
