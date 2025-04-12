@@ -15,6 +15,7 @@ const editCommentContent = document.getElementById('editCommentContent')
 const editCommentId = document.getElementById('editCommentId')
 const editCommentPostId = document.getElementById('editCommentPostId')
 const saveCommentButton = document.getElementById('saveCommentButton')
+const openUserModalButton = document.getElementById('deleteButton')
 
 // Benutzer aus LocalStorage laden oder zum Login weiterleiten
 let currentUser = JSON.parse(localStorage.getItem('user'))
@@ -209,7 +210,7 @@ async function loadPosts() {
         <button onclick="vote(${post.id}, false)" class="vote-button">😾 <span id="dislikes-${post.id}">${post.dislikes || 0}</span></button>
       </div>
       ${
-        isOwner
+        isOwner || currentUser.role === 'admin' || currentUser.role === 'moderator'
           ? `
       <div class="post-management">
         <button onclick="openEditModal(${post.id}, '${escapeForHTML(post.content)}')" class="icon-button edit-button">
@@ -335,7 +336,7 @@ async function loadComments(postId) {
           <p>${escapeForHTML(comment.content)}</p>
         </div>
         ${
-          isCommentOwner
+          isCommentOwner || currentUser.role === 'admin' || currentUser.role === 'moderator'
             ? `
         <div class="comment-actions">
           <button onclick="openEditCommentModal(${comment.id}, '${escapeForHTML(comment.content)}', ${postId})" class="icon-button edit-button">
@@ -505,10 +506,13 @@ const userSearchInput = document.getElementById('userSearchInput')
 let users = [] // Hier werden alle Benutzer zwischengespeichert
 
 // Öffne das User Management Modal, wenn der Button geklickt wird
-document.getElementById('deleteButton').addEventListener('click', () => {
-  userManagementModal.style.display = 'flex'
-  loadUsers()
-})
+if (currentUser.role === 'admin') {
+  openUserModalButton.addEventListener('click', () => {
+    userManagementModal.style.display = 'flex'
+    loadUsers()
+  })
+  openUserModalButton.style.display = 'block'
+}
 
 // Schließe das Modal, wenn das Schließ-Symbol angeklickt wird
 closeUserManagementModal.addEventListener('click', () => {
