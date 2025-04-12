@@ -239,7 +239,8 @@ textarea {
   z-index: 1000;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
 }
 
 .modal {
