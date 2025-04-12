@@ -525,62 +525,67 @@ window.addEventListener('click', (event) => {
 // Funktion zum Laden der Benutzer (API-Endpunkt anpassen, falls nötig)
 async function loadUsers() {
   try {
-    const response = await sendAuthorizedApiRequest('/api/users'); // Passe den Endpunkt ggf. an
+    const response = await sendAuthorizedApiRequest('/api/users') // Passe den Endpunkt ggf. an
     if (response.ok) {
-      allUsers = await response.json();
-      displayUsers(allUsers);
+      allUsers = await response.json()
+      displayUsers(allUsers)
     } else {
-      alert('Fehler beim Laden der Benutzer');
+      alert('Fehler beim Laden der Benutzer')
     }
   } catch (error) {
-    console.error('Fehler beim Laden der Benutzer:', error);
-    alert('Fehler beim Laden der Benutzer');
+    console.error('Fehler beim Laden der Benutzer:', error)
+    alert('Fehler beim Laden der Benutzer')
   }
 }
 
 // Event-Listener für die Suchleiste - filtert die bereits geladenen Benutzer
-userSearchInput.addEventListener('input', function() {
-  const searchTerm = this.value.toLowerCase();
-  const filteredUsers = allUsers.filter(user => user.username.toLowerCase().includes(searchTerm));
-  displayUsers(filteredUsers);
-});
+userSearchInput.addEventListener('input', function () {
+  const searchTerm = this.value.toLowerCase()
+  const filteredUsers = allUsers.filter((user) =>
+    user.username.toLowerCase().includes(searchTerm)
+  )
+  displayUsers(filteredUsers)
+})
 
 // Funktion, um die Benutzerliste im Container darzustellen
 function displayUsers(users) {
-  const container = document.getElementById('userListContainer');
-  container.innerHTML = '';
+  const container = document.getElementById('userListContainer')
+  container.innerHTML = ''
 
   if (users.length === 0) {
-    container.innerHTML = '<p>Keine Benutzer gefunden</p>';
-    return;
+    container.innerHTML = '<p>Keine Benutzer gefunden</p>'
+    return
   }
 
-  users.forEach(user => {
-    const userDiv = document.createElement('div');
-    userDiv.className = 'user-item';
+  users.forEach((user) => {
+    const userDiv = document.createElement('div')
+    userDiv.className = 'user-item'
     userDiv.innerHTML = `
       <span>${user.username}</span>
       <button onclick="blockUser(${user.id})" class="action-button">Sperren</button>
-    `;
-    container.appendChild(userDiv);
-  });
+    `
+    container.appendChild(userDiv)
+  })
 }
 
 // Funktion, um einen Benutzer zu sperren
 async function blockUser(userId) {
-  if (!confirm('Möchtest du diesen Benutzer wirklich sperren?')) return;
+  if (!confirm('Möchtest du diesen Benutzer wirklich sperren?')) return
   try {
-    const response = await sendAuthorizedApiRequest(`/api/users/${userId}/block`, 'POST');
+    const response = await sendAuthorizedApiRequest(
+      `/api/users/${userId}/block`,
+      'POST'
+    )
     if (response.ok) {
-      alert('Benutzer wurde gesperrt');
-      loadUsers(); // Liste neuladen, um die Änderung anzuzeigen
+      alert('Benutzer wurde gesperrt')
+      loadUsers() // Liste neu laden, um die Änderung anzuzeigen
     } else {
-      const errorData = await response.json();
-      alert('Fehler beim Sperren: ' + (errorData.error || 'Unbekannter Fehler'));
+      const errorData = await response.json()
+      alert('Fehler beim Sperren: ' + (errorData.error || 'Unbekannter Fehler'))
     }
   } catch (error) {
-    console.error('Fehler beim Sperren des Benutzers:', error);
-    alert('Fehler beim Sperren des Benutzers');
+    console.error('Fehler beim Sperren des Benutzers:', error)
+    alert('Fehler beim Sperren des Benutzers')
   }
 }
 
