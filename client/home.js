@@ -197,11 +197,11 @@ async function loadPosts() {
         postEl.className = 'post box'
         postEl.innerHTML = `
     <div class="post-header">
-      <span class="post-author">@${post.username || 'Benutzer ' + post.user_id}</span>
-      <small class="post-date">${formatDate(post.created_at || new Date())}</small>
+      <span class="post-author">@${escapeForHTML(post.username) || 'Benutzer ' + post.user_id}</span>
+      <small class="post-date">${escapeForHTML(formatDate(post.created_at || new Date()))}</small>
     </div>
     <div class="post-content">
-      <p>${post.content}</p>
+      <p>${escapeForHTML(post.content)}</p>
     </div>
     <div class="post-actions">
       <div class="vote-buttons">
@@ -212,7 +212,7 @@ async function loadPosts() {
         isOwner
           ? `
       <div class="post-management">
-        <button onclick="openEditModal(${post.id}, '${escapeJS(post.content)}')" class="icon-button edit-button">
+        <button onclick="openEditModal(${post.id}, '${escapeForHTML(post.content)}')" class="icon-button edit-button">
           <i class="fas fa-edit"></i>
         </button>
         <button onclick="deletePost(${post.id})" class="icon-button delete-button">
@@ -328,17 +328,17 @@ async function loadComments(postId) {
       commentEl.className = 'comment'
       commentEl.innerHTML = `
         <div class="comment-header">
-          <span class="comment-author">@${comment.username}</span>
-          <span class="comment-date">${formatDate(comment.created_at)}</span>
+          <span class="comment-author">@${escapeForHTML(comment.username)}</span>
+          <span class="comment-date">${escapeForHTML(formatDate(comment.created_at))}</span>
         </div>
         <div class="comment-content">
-          <p>${comment.content}</p>
+          <p>${escapeForHTML(comment.content)}</p>
         </div>
         ${
           isCommentOwner
             ? `
         <div class="comment-actions">
-          <button onclick="editComment(${comment.id}, '${escapeJS(comment.content)}', ${postId})" class="icon-button edit-button">
+          <button onclick="openEditCommentModal(${comment.id}, '${escapeForHTML(comment.content)}', ${postId})" class="icon-button edit-button">
             <i class="fas fa-edit"></i>
           </button>
           <button onclick="deleteComment(${comment.id}, ${postId})" class="icon-button delete-button">
@@ -391,15 +391,23 @@ async function addComment(postId) {
   }
 }
 
-// Hilfsfunktion zum Escapen von JavaScript-Strings für HTML-Attribute
-function escapeJS(string) {
-  return string
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t')
+// Hilfsfunktion zum Escapen und Unescapen von JavaScript-Strings für HTML-Attribute
+function escapeForHTML (originalString) {
+  return originalString
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function unescapeHTMLForJS (escapedString) {
+  return escapedString
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
 }
 
 // Hilfsfunktion zum Formatieren des Datums
