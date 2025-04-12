@@ -1,11 +1,7 @@
-version: '3.8'
-
 services:
   mariadb:
     image: mariadb:latest
-    volumes:
-      - m223_project_mariadb:/var/lib/mysql
-    restart: always
+    restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=supersecret123
       - MYSQL_DATABASE=minitwitter
@@ -13,28 +9,33 @@ services:
       - MYSQL_PASSWORD=supersecret123
     ports:
       - 3306:3306
-#    healthcheck:
-#      test: mysqladmin ping -h localhost -u minitwitter -psupersecret123
-#      interval: 5s
-#      timeout: 5s
-#      retries: 10
+    volumes:
+      - m223_project_mariadb:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    depends_on:
-      - mariadb
-    restart: always
+    restart: unless-stopped
     environment:
       - PMA_HOST=mariadb
       - PMA_PORT=3306
       - MYSQL_ROOT_PASSWORD=supersecret123
     ports:
       - 9200:80
-      
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
   application:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
       - DB_HOST=mariadb
       - DB_USER=minitwitter
@@ -42,11 +43,11 @@ services:
       - DB_NAME=minitwitter
     ports:
       - 4200:4200
-    depends_on:
-      - mariadb
-    restart: always
     volumes:
       - node_modules:/app/node_modules
+    depends_on:
+      mariadb:
+        condition: service_healthy
 
 
 volumes:
