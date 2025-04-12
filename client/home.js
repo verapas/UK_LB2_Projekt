@@ -91,8 +91,8 @@ postButton.addEventListener('click', async () => {
 // Beitrag bearbeiten öffnen
 function openEditModal(postId, content) {
   editPostId.value = postId
-  editPostContent.value = content
-  editModal.style.display = 'block'
+  editPostContent.value = unescapeHTMLForJS(content)
+  editModal.style.display = 'flex'
 }
 
 // Beitrag speichern
@@ -455,11 +455,11 @@ async function deleteComment(commentId, postId) {
 }
 
 // Kommentar-Modal öffnen
-function editComment(commentId, content, postId) {
+function openEditCommentModal(commentId, content, postId) {
   editCommentId.value = commentId
-  editCommentContent.value = content
+  editCommentContent.value = unescapeHTMLForJS(content)
   editCommentPostId.value = postId
-  editCommentModal.style.display = 'block'
+  editCommentModal.style.display = 'flex'
 }
 
 // Kommentar speichern
@@ -497,28 +497,30 @@ async function saveCommentEdit() {
 }
 
 // Hole Referenzen zu den Elementen des User Managements
-const userManagementModal = document.getElementById('userManagementModal');
-const closeUserManagementModal = document.getElementById('closeUserManagementModal');
-const userSearchInput = document.getElementById('userSearchInput');
-let allUsers = []; // Hier werden alle Benutzer zwischengespeichert
+const userManagementModal = document.getElementById('userManagementModal')
+const closeUserManagementModal = document.getElementById(
+  'closeUserManagementModal'
+)
+const userSearchInput = document.getElementById('userSearchInput')
+let allUsers = [] // Hier werden alle Benutzer zwischengespeichert
 
 // Öffne das User Management Modal, wenn der Button geklickt wird
 document.getElementById('deleteButton').addEventListener('click', () => {
-  userManagementModal.style.display = 'block';
-  loadUsers();
-});
+  userManagementModal.style.display = 'flex'
+  loadUsers()
+})
 
 // Schließe das Modal, wenn das Schließ-Symbol angeklickt wird
 closeUserManagementModal.addEventListener('click', () => {
-  userManagementModal.style.display = 'none';
-});
+  userManagementModal.style.display = 'none'
+})
 
 // Schließe das Modal, wenn außerhalb des Modals geklickt wird
 window.addEventListener('click', (event) => {
   if (event.target === userManagementModal) {
-    userManagementModal.style.display = 'none';
+    userManagementModal.style.display = 'none'
   }
-});
+})
 
 // Funktion zum Laden der Benutzer (API-Endpunkt anpassen, falls nötig)
 async function loadUsers() {

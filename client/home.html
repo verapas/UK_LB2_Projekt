@@ -31,9 +31,11 @@
   <div class="posts-container" id="postsContainer">
     <!-- Beiträge werden hier dynamisch eingefügt -->
   </div>
+</main>
 
-  <!-- Modal für Benutzer sperren -->
-  <div id="userManagementModal" class="modal">
+<!-- Modal für Benutzer sperren -->
+<div id="userManagementModal" class="modal-container">
+  <div class="modal">
     <div class="modal-content">
       <span class="close-button" id="closeUserManagementModal">&times;</span>
       <h2>User sperren</h2>
@@ -42,28 +44,32 @@
       </div>
     </div>
   </div>
-</main>
+</div>
 
 <!-- Bearbeiten-Modal für Posts -->
-<div id="editModal" class="modal">
-  <div class="modal-content">
-    <h2>Beitrag bearbeiten</h2>
-    <textarea id="editPostContent"></textarea>
-    <input type="hidden" id="editPostId">
-    <button id="saveEditButton" class="action-button">Speichern</button>
+<div id="editModal" class="modal-container">
+  <div class="modal">
+    <div class="modal-content">
       <span class="close-button" id="closeEditModal">&times;</span>
+      <h2>Beitrag bearbeiten</h2>
+      <textarea id="editPostContent"></textarea>
+      <input type="hidden" id="editPostId">
+      <button id="saveEditButton" class="action-button">Speichern</button>
+    </div>
   </div>
 </div>
 
 <!-- Bearbeiten-Modal für Kommentare -->
-<div id="editCommentModal" class="modal">
-  <div class="modal-content">
-    <span class="close-button" id="closeCommentModal">&times;</span>
-    <h2>Kommentar bearbeiten</h2>
-    <textarea id="editCommentContent"></textarea>
-    <input type="hidden" id="editCommentId">
-    <input type="hidden" id="editCommentPostId">
-    <button id="saveCommentButton" class="action-button">Speichern</button>
+<div id="editCommentModal" class="modal-container">
+  <div class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="closeCommentModal">&times;</span>
+      <h2>Kommentar bearbeiten</h2>
+      <textarea id="editCommentContent"></textarea>
+      <input type="hidden" id="editCommentId">
+      <input type="hidden" id="editCommentPostId">
+      <button id="saveCommentButton" class="action-button">Speichern</button>
+    </div>
   </div>
 </div>
 
