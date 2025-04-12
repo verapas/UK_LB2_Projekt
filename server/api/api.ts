@@ -274,6 +274,10 @@ export class API {
 
       const user = users[0]
 
+      if (user.isBlocked) {
+        return res.status(401).json({ error: 'Sorry, du wurdest blockiert!' })
+      }
+
       // Check password
       const passwordValid = await bcrypt.compare(password, user.password)
       if (!passwordValid) {
