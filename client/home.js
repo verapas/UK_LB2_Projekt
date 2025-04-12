@@ -392,22 +392,22 @@ async function addComment(postId) {
 }
 
 // Hilfsfunktion zum Escapen und Unescapen von JavaScript-Strings für HTML-Attribute
-function escapeForHTML (originalString) {
+function escapeForHTML(originalString) {
   return originalString
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/'/g, '&#39;')
 }
 
-function unescapeHTMLForJS (escapedString) {
+function unescapeHTMLForJS(escapedString) {
   return escapedString
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
 }
 
 // Hilfsfunktion zum Formatieren des Datums
@@ -528,7 +528,7 @@ async function loadUsers() {
     const response = await sendAuthorizedApiRequest('/api/users') // Passe den Endpunkt ggf. an
     if (response.ok) {
       const responseBody = await response.json()
-      users = responseBody.users;
+      users = responseBody.users
       displayUsers(responseBody.users)
     } else {
       console.error('Fehler beim Laden der Benutzer:', response.err)
@@ -565,13 +565,12 @@ function displayUsers(users) {
     userDiv.innerHTML = `
       <span>${user.username}</span>
       ${
-        user.isBlocked ? (
-          `<button class="action-button" disabled >Gesperrt</button>`
-        ) : (
-          `<button class="action-button" onClick="blockUser(${user.id})">
+        user.id !== currentUser.id ?
+        (user.isBlocked
+          ? `<button class="action-button" disabled >Gesperrt</button>`
+          : `<button class="action-button" onClick="blockUser(${user.id})">
             Sperren
-          </button>`
-        )
+          </button>`) : ''
       }
     `
     container.appendChild(userDiv)
@@ -587,7 +586,6 @@ async function blockUser(userId) {
       'POST'
     )
     if (response.ok) {
-      alert('Benutzer wurde gesperrt')
       loadUsers() // Liste neu laden, um die Änderung anzuzeigen
     } else {
       const errorData = await response.json()

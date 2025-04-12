@@ -174,13 +174,25 @@ export class API {
       return res.status(401).json({ error: 'Zugriff verweigert. Token fehlt.' })
     }
 
-    jwt.verify(token, secretKey, (err, payload) => {
+    jwt.verify(token, secretKey, async (err, payload) => {
       if (err || !verifyJetPayloadIsMiniTwitterPayload(payload)) {
         return res
           .status(403)
           .json({ error: 'Ungültiges oder abgelaufenes Token.' })
       }
       req.user = payload
+
+      const query = `SELECT *
+                     FROM users
+                     WHERE username = ?
+                       AND isBlocked = false`
+      const result = await db.executeSQL<User>(query, [payload.username])
+      if (!Array.isArray(result) || result.length !== 1) {
+        return res
+          .status(401)
+          .json({ error: 'Request durch ungültigen User' })
+      }
+
       next()
     })
   }
@@ -680,7 +692,7 @@ export class API {
   }
 
   private async blockUser(req: AuthenticatedRequest, res: Response) {
-    const userToBlockId = req.params.id;
+    const userToBlockId = req.params.id
     try {
       // Benutzer aus der Datenbank abrufen
       const userQuery = `UPDATE users
@@ -689,20 +701,23 @@ export class API {
       const result = await db.executeSQL(userQuery, [userToBlockId])
 
       if (Array.isArray(result)) {
-        console.error(`Unerwartetes Resultat beim Blocken von Benutzer: ${JSON.stringify(result)}`)
-        return res
-          .status(500)
-          .json({ error: `Interner Serverfehler`})
+        console.error(
+          `Unerwartetes Resultat beim Blocken von Benutzer: ${JSON.stringify(result)}`
+        )
+        return res.status(500).json({ error: `Interner Serverfehler` })
       }
       if (result.affectedRows !== 1) {
         return res
           .status(404)
-          .json({ error: `User mit id ${userToBlockId} nicht gefunden`})
+          .json({ error: `User mit id ${userToBlockId} nicht gefunden` })
       }
 
       res.status(200).json({ message: 'User blocked' })
     } catch (error) {
-      console.error(`Fehler bei Blockieren von Benutzer mit id ${userToBlockId}`, error)
+      console.error(
+        `Fehler bei Blockieren von Benutzer mit id ${userToBlockId}`,
+        error
+      )
       res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }
