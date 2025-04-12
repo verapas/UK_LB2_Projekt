@@ -295,7 +295,8 @@ export class API {
   }
 
   // Get posts endpoint
-  private async getPosts(_: AuthenticatedRequest, res: Response) {
+  private async getPosts(req: AuthenticatedRequest, res: Response) {
+    const userId = req.query.userId;
     try {
       const query = `
         SELECT p.*,
@@ -304,12 +305,13 @@ export class API {
                CAST((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = false) AS CHAR) as dislikes
         FROM posts p
                JOIN users u ON p.user_id = u.id
-        ORDER BY p.created_at DESC
+        WHERE ${userId ? 'user_id = ?' : '1=1'}
+        ORDER BY p.created_at DESC;
       `
 
       const posts = await db.executeSQL<
         Post & { username: string; likes: number; dislikes: number }
-      >(query)
+      >(query, typeof userId === 'string' ? [userId] : [])
       res.json(posts)
     } catch (error) {
       console.error('Error fetching posts:', error)
