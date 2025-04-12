@@ -268,6 +268,22 @@ textarea {
   color: #f5f8fa;
 }
 
+/* Benutzerliste-Container */
+#userListContainer {
+  margin-top: 1em;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5em 0;
+  border-bottom: 1px solid #ccc;
+}
+
+
 /* Footer */
 .footer {
   background-color: #192734;
@@ -279,7 +295,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 800px; /* Breiter gemacht */
+  max-width: 800px;
   margin: 0 auto;
   width: 100%;
   font-size: 0.8rem;

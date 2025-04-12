@@ -147,6 +147,12 @@ export class API {
       ],
       this.updateUser.bind(this)
     )
+
+    this.app.get(
+      '/api/users',
+      this.authenticateToken.bind(this),
+      this.getUsers.bind(this)
+    )
   }
 
   // Authentication middleware
@@ -554,6 +560,26 @@ export class API {
     } catch (err) {
       console.error('Error when disliking:', err)
       res.status(500).json({ error: 'Error when disliking post' })
+    }
+  }
+
+  private async getUsers(_: AuthenticatedRequest, res: Response) {
+    try {
+      // Benutzer aus der Datenbank abrufen
+      const userQuery = `SELECT *
+                         FROM users`
+      const users = await db.executeSQL<User>(userQuery)
+
+      if (!Array.isArray(users)) {
+        return res
+          .status(500)
+          .json({ error: 'Fehler bei Abfrage der Benutzer' })
+      }
+
+      res.json({ users })
+    } catch (error) {
+      console.error('Fehler bei Abfrage der Benutzer:', error)
+      res.status(500).json({ error: 'Interner Serverfehler' })
     }
   }
 

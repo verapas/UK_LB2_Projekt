@@ -502,7 +502,7 @@ const closeUserManagementModal = document.getElementById(
   'closeUserManagementModal'
 )
 const userSearchInput = document.getElementById('userSearchInput')
-let allUsers = [] // Hier werden alle Benutzer zwischengespeichert
+let users = [] // Hier werden alle Benutzer zwischengespeichert
 
 // Öffne das User Management Modal, wenn der Button geklickt wird
 document.getElementById('deleteButton').addEventListener('click', () => {
@@ -527,9 +527,11 @@ async function loadUsers() {
   try {
     const response = await sendAuthorizedApiRequest('/api/users') // Passe den Endpunkt ggf. an
     if (response.ok) {
-      allUsers = await response.json()
-      displayUsers(allUsers)
+      const responseBody = await response.json()
+      users = responseBody.users;
+      displayUsers(responseBody.users)
     } else {
+      console.error('Fehler beim Laden der Benutzer:', response.err)
       alert('Fehler beim Laden der Benutzer')
     }
   } catch (error) {
@@ -541,7 +543,7 @@ async function loadUsers() {
 // Event-Listener für die Suchleiste - filtert die bereits geladenen Benutzer
 userSearchInput.addEventListener('input', function () {
   const searchTerm = this.value.toLowerCase()
-  const filteredUsers = allUsers.filter((user) =>
+  const filteredUsers = users.filter((user) =>
     user.username.toLowerCase().includes(searchTerm)
   )
   displayUsers(filteredUsers)
