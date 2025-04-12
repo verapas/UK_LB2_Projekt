@@ -199,13 +199,15 @@ export class API {
             .json({ error: 'Request durch ungültigen User' })
         }
         // user ist nicht blockiert → rollen prüfen
-        const userHasRequiredRole = requiredRoles.some(
-          (role) => result[0].role === role
-        )
-        if (!userHasRequiredRole) {
-          return res
-            .status(401)
-            .json({ error: 'Request durch ungültigen User' })
+        if (0 < requiredRoles.length) {
+          const userHasRequiredRole = requiredRoles.some(
+            (role) => result[0].role === role
+          )
+          if (!userHasRequiredRole) {
+            return res
+              .status(401)
+              .json({ error: 'Request durch ungültigen User' })
+          }
         }
         next()
       })
@@ -340,6 +342,7 @@ export class API {
   private updatePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const { content } = req.body
+    const user = req.user
 
     if (!content) {
       return res.status(400).json({ error: 'Content is required' })
@@ -353,6 +356,16 @@ export class API {
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
+      }
+
+      // role based validation
+      if (
+        post[0].user_id !== user.id &&
+        ![UserRole.ADMIN, UserRole.MODERATOR].includes(user.role as UserRole)
+      ) {
+        return res
+          .status(403)
+          .json({ error: 'Keine Berechtigung zum updaten dieses Posts' })
       }
 
       const result = await db.executeSQL(
@@ -371,6 +384,7 @@ export class API {
 
   private deletePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
+    const user = req.user
 
     try {
       const post = await db.executeSQL<Post>(
@@ -380,6 +394,16 @@ export class API {
 
       if (!post || (Array.isArray(post) && post.length === 0)) {
         return res.status(404).json({ error: 'Post not found' })
+      }
+
+      // role based validation
+      if (
+        post[0].user_id !== user.id &&
+        ![UserRole.ADMIN, UserRole.MODERATOR].includes(user.role as UserRole)
+      ) {
+        return res
+          .status(403)
+          .json({ error: 'Keine Berechtigung zum Löschen dieses Beitrags' })
       }
 
       const result = await db.executeSQL('DELETE FROM posts WHERE id = ?', [
@@ -451,16 +475,14 @@ export class API {
         created_at: Date
       }>('SELECT * FROM comments WHERE id = ?', [commentId])
 
-      if (!comment || (Array.isArray(comment) && comment.length === 0)) {
+      if (!comment || !Array.isArray(comment) || comment.length === 0) {
         return res.status(404).json({ error: 'Kommentar nicht gefunden' })
       }
 
       // role-based access control
       if (
-        Array.isArray(comment) &&
         comment[0].user_id !== user.id &&
-        user.role !== 'admin' &&
-        user.role !== 'moderator'
+        ![UserRole.ADMIN, UserRole.MODERATOR].includes(user.role as UserRole)
       ) {
         return res.status(403).json({
           error: 'Keine Berechtigung zum Bearbeiten dieses Kommentars',
@@ -494,16 +516,14 @@ export class API {
         created_at: Date
       }>('SELECT * FROM comments WHERE id = ?', [commentId])
 
-      if (!comment || (Array.isArray(comment) && comment.length === 0)) {
+      if (!comment || !Array.isArray(comment) || comment.length === 0) {
         return res.status(404).json({ error: 'Kommentar nicht gefunden' })
       }
 
       // role based validation
       if (
-        Array.isArray(comment) &&
         comment[0].user_id !== user.id &&
-        user.role !== 'admin' &&
-        user.role !== 'moderator'
+        ![UserRole.ADMIN, UserRole.MODERATOR].includes(user.role as UserRole)
       ) {
         return res
           .status(403)
