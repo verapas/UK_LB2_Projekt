@@ -1,6 +1,7 @@
 .git
 .idea
 .vscode
+dist
 Dockerfile
 docker-compose.yaml
 *.log
