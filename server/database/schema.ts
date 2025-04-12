@@ -8,10 +8,11 @@ interface User {
 const USER_TABLE = `
   CREATE TABLE IF NOT EXISTS users
   (
-    id       INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    username VARCHAR(50)  NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    role     VARCHAR(50)  NOT NULL,
+    id        INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    username  VARCHAR(50)  NOT NULL UNIQUE,
+    password  VARCHAR(255) NOT NULL,
+    role      VARCHAR(10)  NOT NULL,
+    isBlocked BOOLEAN default false,
     PRIMARY KEY (id)
   );`
 

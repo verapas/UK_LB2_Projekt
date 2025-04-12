@@ -2,6 +2,12 @@ import mysql from 'mysql2/promise'
 import { COMMENT_TABLE, LIKE_TABLE, POST_TABLE, USER_TABLE } from './schema'
 import bcrypt from 'bcrypt'
 
+export enum UserRole {
+  USER = 'user',
+  MODERATOR = 'moderator',
+  ADMIN = 'admin',
+}
+
 class Database {
   // Properties
   private _pool: mysql.Pool
@@ -42,21 +48,24 @@ class Database {
     const hashedPassword = await bcrypt.hash('123456', 10)
     await this.executeSQL(
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      ['user', hashedPassword, 'user']
+      ['user', hashedPassword, UserRole.USER]
     )
     await this.executeSQL(
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      ['moderator', hashedPassword, 'moderator']
+      ['moderator', hashedPassword, UserRole.MODERATOR]
     )
     await this.executeSQL(
       'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-      ['admin', hashedPassword, 'admin']
+      ['admin', hashedPassword, UserRole.ADMIN]
     )
 
     // Create posts
     await this.executeSQL(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
-      ['1', 'Hallo :) ich bin ein Benutzer mit der Rolle "user" und mache einen Post. und du so?']
+      [
+        '1',
+        'Hallo :) ich bin ein Benutzer mit der Rolle "user" und mache einen Post. und du so?',
+      ]
     )
     await this.executeSQL(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
@@ -64,7 +73,10 @@ class Database {
     )
     await this.executeSQL(
       'INSERT INTO posts (user_id, content) VALUES (?, ?)',
-      ['3', 'Als Administrator kann ich nicht nur eure Kommentare löschen, sondern eure Profile sogar deaktivieren!']
+      [
+        '3',
+        'Als Administrator kann ich nicht nur eure Kommentare löschen, sondern eure Profile sogar deaktivieren!',
+      ]
     )
 
     // Create comments
@@ -78,7 +90,11 @@ class Database {
     )
     await this.executeSQL(
       'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
-      ['1', '3', 'Hallo :) freut mich das du unsre Platform nutzt um diesen Kommentar zu schreiben']
+      [
+        '1',
+        '3',
+        'Hallo :) freut mich das du unsre Platform nutzt um diesen Kommentar zu schreiben',
+      ]
     )
   }
 
