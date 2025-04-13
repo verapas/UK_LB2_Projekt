@@ -8,29 +8,43 @@
   "scripts": {
     "dev": "concurrently \"yarn dev:server\" \"yarn dev:client\"",
     "dev:server": "vite",
-    "dev:client": "livereload client/ -p 35729 -e html,js,css",
+    "dev:client": "livereload client/ -p 35731 -e html,js,css",
     "build": "vite build",
-    "start": "NODE_ENV=production node dist/index.cjs",
+    "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "lint": "eslint .",
     "prettify": "prettier --write server/**/*.ts"
   },
   "dependencies": {
+    "@swc/core": "^1.11.18",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.0",
+    "pino-http": "^10.4.0",
+    "rollup": "^4.39.0",
     "vite-plugin-live-reload": "^3.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
-    "typescript-eslint": "^8.29.0",
+    "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
     "concurrently": "^9.1.2",
     "connect-livereload": "^0.6.1",
+    "cross-env": "^7.0.3",
     "livereload": "^0.9.3",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.29.0",
     "vite": "^5.4.11",
     "vite-express": "^0.19.0",
     "vite-plugin-full-reload": "^1.2.0",
     "vite-plugin-node": "^4.0.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.39.0"
   }
 }

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profil - MiniTwitter</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+<header class="header">
+  <div class="header-content">
+    <h1 class="title">MiniTwitter</h1>
+    <div class="user-profile">
+      <a href="home.html" class="back-button"><i class="fas fa-home"></i> Zurück</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="profile-container box">
+    <h2>Mein Profil</h2>
+
+    <div class="profile-form">
+      <div class="form-group">
+        <label for="username">Benutzername</label>
+        <input type="text" id="username" placeholder="Benutzername">
+      </div>
+
+      <div class="form-group">
+        <label for="currentPassword">Aktuelles Passwort</label>
+        <input type="password" id="currentPassword" placeholder="Aktuelles Passwort">
+      </div>
+
+      <div class="form-group">
+        <label for="newPassword">Neues Passwort</label>
+        <input type="password" id="newPassword" placeholder="Neues Passwort (leer lassen, wenn unverändert)">
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Passwort bestätigen</label>
+        <input type="password" id="confirmPassword" placeholder="Neues Passwort bestätigen">
+      </div>
+
+      <div id="error-message" class="error-message"></div>
+
+      <button id="saveProfileButton" class="action-button">Änderungen speichern</button>
+    </div>
+  </div>
+
+  <div class="user-posts box">
+    <h2>Meine Beiträge</h2>
+    <div id="userPostsContainer">
+      <div class="loading">Beiträge werden geladen...</div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <p>MiniTwitter &copy; 2025</p>
+    <p><a href="#" id="logoutButton">Abmelden</a></p>
+  </div>
+</footer>
+
+<script src="profile.js"></script>
+</body>
+</html>

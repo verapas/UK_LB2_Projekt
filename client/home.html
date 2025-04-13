@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniTwitter</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+<header class="header">
+  <div class="header-content">
+    <h1 class="title">MiniTwitter</h1>
+    <div class="user-profile">
+      <button style="display: none" id="deleteButton" class="action-button">User sperren</button>
+      <span>Schön das du da bist <a href="profile.html" id="username">...</a></span>
+      <a href="profile.html" class="profile-button"><i class="fas fa-user"></i></a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <!-- Create post section -->
+  <div class="create-post box ">
+    <h2>Neuer Beitrag</h2>
+    <textarea id="postContent" placeholder="Was möchtest du sagen?"></textarea>
+    <button id="postButton" class="action-button">Beitrag erstellen</button>
+  </div>
+
+  <!-- Posts container -->
+  <div class="posts-container" id="postsContainer">
+    <!-- Posts will be dynamically inserted here -->
+  </div>
+</main>
+
+<!-- Modal for managing users -->
+<div id="userManagementModal" class="modal-container">
+  <div class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="closeUserManagementModal">&times;</span>
+      <h2>User sperren</h2>
+      <input type="text" id="userSearchInput" placeholder="Benutzer suchen..." />
+      <div id="userListContainer">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for editing posts -->
+<div id="editModal" class="modal-container">
+  <div class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="closeEditModal">&times;</span>
+      <h2>Beitrag bearbeiten</h2>
+      <textarea id="editPostContent"></textarea>
+      <input type="hidden" id="editPostId">
+      <button id="saveEditButton" class="action-button">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for editing comments -->
+<div id="editCommentModal" class="modal-container">
+  <div class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="closeCommentModal">&times;</span>
+      <h2>Kommentar bearbeiten</h2>
+      <textarea id="editCommentContent"></textarea>
+      <input type="hidden" id="editCommentId">
+      <input type="hidden" id="editCommentPostId">
+      <button id="saveCommentButton" class="action-button">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <p>MiniTwitter &copy; 2025</p>
+    <p><a href="#" id="logoutButton">Abmelden</a></p>
+  </div>
+</footer>
+
+<script src="home.js"></script>
+</body>
+</html>

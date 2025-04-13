@@ -1,14 +1,12 @@
 import express, { Express, Request, Response } from 'express'
 import { API } from './api'
 import http from 'http'
-import { resolve, dirname } from 'path'
-import { Database } from './database'
+import { dirname, resolve } from 'path'
 
 class Backend {
   // Properties
   private _app: Express
   private _api: API
-  private _database: Database
   private _env: string
 
   // Getters
@@ -20,14 +18,10 @@ class Backend {
     return this._api
   }
 
-  public get database(): Database {
-    return this._database
-  }
-
   // Constructor
   constructor() {
     this._app = express()
-    this._database = new Database()
+    this._app.use(express.json())
     this._api = new API(this._app)
     this._env = process.env.NODE_ENV || 'development'
 
