@@ -25,7 +25,7 @@ Um die gesamte Anwendung (inklusive Datenbank und Frontend/Backend) per Docker C
 
 ```bash
 # Starte die komplette Anwendung via Docker Compose
-docker compose up
+docker compose up -d
 ```
 
 Die Anwendung ist danach verfügbar unter:
@@ -36,8 +36,4 @@ Die Anwendung ist danach verfügbar unter:
 - **Username:** `user`, `moderator` oder `admin`
 - **Password:** `123456`
 
-### Hinweis zur Installation von Dependencies im Docker-Setup
 
-Im Dockerfile wird beim Start der Anwendung der Befehl `npm install --no-optional` verwendet.  
-Das Flag `--no-optional` bewirkt, dass optionale Abhängigkeiten, die plattformabhängig sind (wie z.B. **@rollup/rollup-win32-x64-msvc**), in Linux-Umgebungen übersprungen werden.  
-Dies stellt sicher, dass npm keine fehlerhaften oder nicht benötigten Pakete installiert, wenn das Projekt unter Linux (z.B. in einem Container) läuft.
