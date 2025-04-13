@@ -29,7 +29,9 @@ class Database {
       })
   }
 
-  // Methods
+  /**
+   * Initializes the database schema by creating the necessary tables and seeding initial data.
+   */
   private initializeDBSchema = async () => {
     // Drop tables if they exist
     await this.executeSQL('DROP TABLE IF EXISTS likes')

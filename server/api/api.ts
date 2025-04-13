@@ -161,9 +161,8 @@ export class API {
     )
   }
 
-  // Authentication middleware
   /**
-   * Erstellt eine middleware Funktion, die *eine* der requiredRoles voraussetzt.
+   * Creates a middleware function that requires *one* of the requiredRoles.
    */
   private buildAuthenticationMiddleware(requiredRoles: UserRole[] = []) {
     function authenticateToken(
@@ -216,7 +215,11 @@ export class API {
     return authenticateToken.bind(this)
   }
 
-  // Register endpoint
+  /**
+   * Registers a new user
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async register(req: Request, res: Response) {
     try {
       const errors = validationResult(req)
@@ -252,7 +255,11 @@ export class API {
     }
   }
 
-  // Login endpoint
+  /**
+   * Logs in a user and generates a JWT token
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async login(req: Request, res: Response) {
     try {
       const errors = validationResult(req)
@@ -298,7 +305,11 @@ export class API {
     }
   }
 
-  // Get posts endpoint
+  /**
+   * Retrieves posts from the database
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async getPosts(req: AuthenticatedRequest, res: Response) {
     const userId = req.query.userId;
     try {
@@ -323,7 +334,11 @@ export class API {
     }
   }
 
-  // Create post endpoint
+  /**
+   * Creates a new post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async createPost(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req)
@@ -345,6 +360,11 @@ export class API {
     }
   }
 
+  /**
+   * Updates a post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private updatePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const { content } = req.body
@@ -388,6 +408,11 @@ export class API {
     }
   }
 
+  /**
+   * Deletes a post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private deletePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const user = req.user
@@ -425,6 +450,11 @@ export class API {
     }
   }
 
+  /**
+   * Creates a comment for a post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async createComment(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req)
@@ -461,6 +491,11 @@ export class API {
     }
   }
 
+  /**
+   * Updates a comment
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async updateComment(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req)
@@ -508,6 +543,11 @@ export class API {
     }
   }
 
+  /**
+   * Deletes a comment
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async deleteComment(req: AuthenticatedRequest, res: Response) {
     try {
       const commentId = req.params.id
@@ -548,6 +588,11 @@ export class API {
     }
   }
 
+  /**
+   * Retrieves comments for a post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async getCommentsByPostId(req: AuthenticatedRequest, res: Response) {
     try {
       const postId = req.params.id
@@ -579,6 +624,11 @@ export class API {
     }
   }
 
+  /**
+   * Likes a post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private likePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const userId = req.user.id // The logged-in user
@@ -601,6 +651,12 @@ export class API {
       res.status(500).json({ error: 'Error when liking post' })
     }
   }
+
+  /**
+   * Dislikes a post
+   * @param req - The request object
+   * @param res - The response object
+   */
   private dislikePost = async (req: AuthenticatedRequest, res: Response) => {
     const postId = req.params.id
     const userId = req.user.id // The logged-in user
@@ -624,6 +680,11 @@ export class API {
     }
   }
 
+  /**
+   * Retrieves all users
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async getUsers(_: AuthenticatedRequest, res: Response) {
     try {
       // Benutzer aus der Datenbank abrufen
@@ -644,6 +705,11 @@ export class API {
     }
   }
 
+  /**
+   * Updates the user profile
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async updateUserProfile(req: AuthenticatedRequest, res: Response) {
     try {
       const errors = validationResult(req)
@@ -734,6 +800,11 @@ export class API {
     }
   }
 
+  /**
+   * Blocks a user
+   * @param req - The request object
+   * @param res - The response object
+   */
   private async blockUser(req: AuthenticatedRequest, res: Response) {
     const userToBlockId = req.params.id
     try {

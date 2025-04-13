@@ -27,7 +27,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 800px; /* Breiter gemacht */
+  max-width: 800px;
   margin: 0 auto;
   width: 100%;
 }
@@ -84,7 +84,7 @@ body {
 .profile-container,
 .user-posts {
   width: 100%;
-  max-width: 800px; /* Breiter gemacht */
+  max-width: 800px;
 }
 
 .box {
@@ -272,7 +272,7 @@ textarea {
   color: #f5f8fa;
 }
 
-/* Benutzerliste-Container */
+/* User list container */
 #userListContainer {
   margin-top: 1em;
   max-height: 300px;
@@ -413,7 +413,7 @@ input[type="password"] {
   color: #8899a6;
 }
 
-/* Login/Registrierung Styles */
+/* Login/Registration Styles */
 .login-container {
   max-width: 800px;
   margin: 0 auto;

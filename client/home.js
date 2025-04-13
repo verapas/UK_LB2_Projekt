@@ -17,17 +17,17 @@ const editCommentPostId = document.getElementById('editCommentPostId')
 const saveCommentButton = document.getElementById('saveCommentButton')
 const openUserModalButton = document.getElementById('deleteButton')
 
-// Benutzer aus LocalStorage laden oder zum Login weiterleiten
+// Load user from LocalStorage or redirect to login
 let currentUser = JSON.parse(localStorage.getItem('user'))
 if (!currentUser) {
-  // Wenn kein Benutzer eingeloggt ist, auf die Login-Seite umleiten
+  // If no user is logged in, redirect to the login page
   window.location.href = 'index.html'
 } else {
-  // Wenn ein Benutzer eingeloggt ist, den Benutzernamen anzeigen
+  // If a user is logged in, display the username
   usernameSpan.textContent = currentUser.username
 }
 
-// Modal-Funktionen für Posts
+// Modal functions for posts
 closeButton.addEventListener('click', () => {
   editModal.style.display = 'none'
 })
@@ -41,12 +41,11 @@ window.addEventListener('click', (event) => {
   }
 })
 
-// Modal-Funktionen für Kommentare
+// Modal functions for comments
 closeCommentModal.addEventListener('click', () => {
   editCommentModal.style.display = 'none'
 })
 
-// Kommentar speichern
 saveCommentButton.addEventListener('click', saveCommentEdit)
 
 function sendAuthorizedApiRequest(url, method = 'GET', body) {
@@ -62,7 +61,7 @@ function sendAuthorizedApiRequest(url, method = 'GET', body) {
   })
 }
 
-// Beitrag erstellen
+// Create Post
 postButton.addEventListener('click', async () => {
   const content = postContent.value.trim()
   if (!content) return alert('Bitte Inhalt eingeben!')
@@ -89,14 +88,14 @@ postButton.addEventListener('click', async () => {
   }
 })
 
-// Beitrag bearbeiten öffnen
+// Open edit post
 function openEditModal(postId, content) {
   editPostId.value = postId
   editPostContent.value = unescapeHTMLForJS(content)
   editModal.style.display = 'flex'
 }
 
-// Beitrag speichern
+// save post
 saveEditButton.addEventListener('click', async () => {
   const postId = editPostId.value
   const content = editPostContent.value.trim()
@@ -125,7 +124,6 @@ saveEditButton.addEventListener('click', async () => {
   }
 })
 
-// Beitrag löschen
 async function deletePost(postId) {
   if (!confirm('Möchtest du diesen Beitrag wirklich löschen?')) return
 
@@ -147,7 +145,6 @@ async function deletePost(postId) {
   }
 }
 
-// Beiträge vom Server laden
 async function loadPosts() {
   try {
     postsContainer.innerHTML =
@@ -169,7 +166,7 @@ async function loadPosts() {
       return
     }
 
-    // Alle Posts erstellen
+    // create all posts
     const renderedPosts = await Promise.all(
       posts.map(async (post) => {
         const isOwner =
@@ -177,7 +174,7 @@ async function loadPosts() {
           currentUser.role === 'admin' ||
           currentUser.role === 'moderator'
 
-        // Kommentare im Voraus laden
+        // load comments
         let commentCount = 0
         try {
           const commentsResponse = await sendAuthorizedApiRequest(
@@ -225,7 +222,7 @@ async function loadPosts() {
       }
     </div>
     
-    <!-- Kommentarbereich hinzufügen -->
+    <!-- add comment section -->
     <div class="comments-section">
       <div class="comments-toggle" onclick="toggleComments(${post.id})">
         <i class="fas fa-comment"></i> Kommentare (<span id="comment-count-${post.id}">${commentCount}</span>)
@@ -233,7 +230,7 @@ async function loadPosts() {
       
       <div id="comments-container-${post.id}" class="comments-container" style="display: none;">
         <div class="comments-list" id="comments-list-${post.id}">
-          <!-- Kommentare werden hier dynamisch eingefügt -->
+          <!-- comments will be loaded here dynammically -->
         </div>
         
         <div class="create-comment">
@@ -247,7 +244,7 @@ async function loadPosts() {
       })
     )
 
-    // Alle Posts zum Container hinzufügen
+    // add all posts to cotainer
     renderedPosts.forEach((postEl) => {
       postsContainer.appendChild(postEl)
     })
@@ -258,7 +255,7 @@ async function loadPosts() {
   }
 }
 
-// Like-/Dislike-Funktion
+// Like-/Dislike-function
 async function vote(postId, isLike) {
   try {
     const response = await sendAuthorizedApiRequest(
@@ -279,7 +276,7 @@ async function vote(postId, isLike) {
   }
 }
 
-// Kommentare ein-/ausblenden
+// toggle show-comments
 function toggleComments(postId) {
   const commentsContainer = document.getElementById(
     `comments-container-${postId}`
@@ -292,7 +289,7 @@ function toggleComments(postId) {
   }
 }
 
-// Kommentare laden
+// load comments
 async function loadComments(postId) {
   const commentsList = document.getElementById(`comments-list-${postId}`)
   const commentCount = document.getElementById(`comment-count-${postId}`)
@@ -359,7 +356,6 @@ async function loadComments(postId) {
   }
 }
 
-// Kommentar hinzufügen
 async function addComment(postId) {
   const commentInput = document.getElementById(`comment-input-${postId}`)
   const content = commentInput.value.trim()
@@ -381,10 +377,10 @@ async function addComment(postId) {
       throw new Error(errorData.error || 'Fehler beim Erstellen des Kommentars')
     }
 
-    // Kommentarfeld zurücksetzen
+    // reset comment-input
     commentInput.value = ''
 
-    // Kommentare neu laden
+    // Load-comment
     loadComments(postId)
   } catch (error) {
     console.error('Fehler beim Erstellen des Kommentars:', error)
@@ -392,7 +388,7 @@ async function addComment(postId) {
   }
 }
 
-// Hilfsfunktion zum Escapen und Unescapen von JavaScript-Strings für HTML-Attribute
+// Helper function to escape a string for use in HTML attributes
 function escapeForHTML(originalString) {
   return originalString
     .replace(/&/g, '&amp;')
@@ -411,7 +407,7 @@ function unescapeHTMLForJS(escapedString) {
     .replace(/&#39;/g, "'")
 }
 
-// Hilfsfunktion zum Formatieren des Datums
+// Helper function to format a date in the format
 function formatDate(dateString) {
   const date = new Date(dateString)
   return date.toLocaleDateString('de-DE', {
@@ -423,14 +419,13 @@ function formatDate(dateString) {
   })
 }
 
-// Abmelden
+// logout
 logoutButton.addEventListener('click', () => {
   localStorage.removeItem('user')
   localStorage.removeItem('token')
   window.location.href = 'index.html'
 })
 
-// Kommentar löschen
 async function deleteComment(commentId, postId) {
   if (!confirm('Möchtest du diesen Kommentar wirklich löschen?')) return
 
@@ -441,7 +436,6 @@ async function deleteComment(commentId, postId) {
     )
 
     if (response.ok) {
-      // Kommentare neu laden
       loadComments(postId)
     } else {
       const error = await response.json()
@@ -455,7 +449,7 @@ async function deleteComment(commentId, postId) {
   }
 }
 
-// Kommentar-Modal öffnen
+// oppen comment modal
 function openEditCommentModal(commentId, content, postId) {
   editCommentId.value = commentId
   editCommentContent.value = unescapeHTMLForJS(content)
@@ -463,7 +457,6 @@ function openEditCommentModal(commentId, content, postId) {
   editCommentModal.style.display = 'flex'
 }
 
-// Kommentar speichern
 async function saveCommentEdit() {
   const editCommentModal = document.getElementById('editCommentModal')
   const commentId = document.getElementById('editCommentId').value
@@ -497,15 +490,15 @@ async function saveCommentEdit() {
   }
 }
 
-// Hole Referenzen zu den Elementen des User Managements
+// Function to get references to the User Management elements
 const userManagementModal = document.getElementById('userManagementModal')
 const closeUserManagementModal = document.getElementById(
   'closeUserManagementModal'
 )
 const userSearchInput = document.getElementById('userSearchInput')
-let users = [] // Hier werden alle Benutzer zwischengespeichert
+let users = []
 
-// Öffne das User Management Modal, wenn der Button geklickt wird
+// Open the User Management modal when the button is clicked
 if (currentUser.role === 'admin') {
   openUserModalButton.addEventListener('click', () => {
     userManagementModal.style.display = 'flex'
@@ -514,19 +507,19 @@ if (currentUser.role === 'admin') {
   openUserModalButton.style.display = 'block'
 }
 
-// Schließe das Modal, wenn das Schließ-Symbol angeklickt wird
+// Close the modal when the close icon is clicked
 closeUserManagementModal.addEventListener('click', () => {
   userManagementModal.style.display = 'none'
 })
 
-// Schließe das Modal, wenn außerhalb des Modals geklickt wird
+// Close the modal when clicking outside of the modal
 window.addEventListener('click', (event) => {
   if (event.target === userManagementModal) {
     userManagementModal.style.display = 'none'
   }
 })
 
-// Funktion zum Laden der Benutzer (API-Endpunkt anpassen, falls nötig)
+// Function to load the users
 async function loadUsers() {
   try {
     const response = await sendAuthorizedApiRequest('/api/users') // Passe den Endpunkt ggf. an
@@ -544,7 +537,7 @@ async function loadUsers() {
   }
 }
 
-// Event-Listener für die Suchleiste - filtert die bereits geladenen Benutzer
+// Event listener for the search bar - filters the already loaded users
 userSearchInput.addEventListener('input', function () {
   const searchTerm = this.value.toLowerCase()
   const filteredUsers = users.filter((user) =>
@@ -553,7 +546,7 @@ userSearchInput.addEventListener('input', function () {
   displayUsers(filteredUsers)
 })
 
-// Funktion, um die Benutzerliste im Container darzustellen
+// Function to render the user list in the container
 function displayUsers(users) {
   const container = document.getElementById('userListContainer')
   container.innerHTML = ''
@@ -581,7 +574,7 @@ function displayUsers(users) {
   })
 }
 
-// Funktion, um einen Benutzer zu sperren
+// Function to block a user
 async function blockUser(userId) {
   if (!confirm('Möchtest du diesen Benutzer wirklich sperren?')) return
   try {
@@ -590,7 +583,7 @@ async function blockUser(userId) {
       'POST'
     )
     if (response.ok) {
-      loadUsers() // Liste neu laden, um die Änderung anzuzeigen
+      loadUsers() // Reload the list to display the change
     } else {
       const errorData = await response.json()
       alert('Fehler beim Sperren: ' + (errorData.error || 'Unbekannter Fehler'))
@@ -601,7 +594,7 @@ async function blockUser(userId) {
   }
 }
 
-// Beiträge beim Laden der Seite anzeigen
+// Display posts when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   loadPosts()
 })

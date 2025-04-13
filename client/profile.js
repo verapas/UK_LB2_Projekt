@@ -8,7 +8,7 @@ const saveProfileButton = document.getElementById('saveProfileButton')
 const errorMessage = document.getElementById('error-message')
 const logoutButton = document.getElementById('logoutButton')
 
-// Benutzer aus LocalStorage laden oder zum Login weiterleiten
+// Load user from LocalStorage or redirect to login
 let currentUser = JSON.parse(localStorage.getItem('user'))
 if (!currentUser) {
   window.location.href = 'index.html'
@@ -16,7 +16,7 @@ if (!currentUser) {
   usernameInput.value = currentUser.username
 }
 
-// Benutzerprofil speichern
+// Save user profile
 saveProfileButton.addEventListener('click', async () => {
   errorMessage.textContent = ''
 
@@ -25,7 +25,7 @@ saveProfileButton.addEventListener('click', async () => {
   const newPassword = newPasswordInput.value
   const confirmPassword = confirmPasswordInput.value
 
-  // Validierungen
+  // validation
   if (!username) {
     return showError('Benutzername darf nicht leer sein.')
   }
@@ -63,18 +63,18 @@ saveProfileButton.addEventListener('click', async () => {
 
     const data = await response.json()
 
-    // Aktualisiere den Benutzer im LocalStorage
+    // Update the user in LocalStorage
     currentUser.username = username
     localStorage.setItem('user', JSON.stringify(currentUser))
 
-    // Passwortfelder zurücksetzen
+    // Reset password fields
     currentPasswordInput.value = ''
     newPasswordInput.value = ''
     confirmPasswordInput.value = ''
 
     showError('Profil erfolgreich aktualisiert!', false)
 
-    // Nach 2 Sekunden zurück zur Hauptseite
+    // Return to the main page after 2 seconds
     setTimeout(() => {
       window.location.href = 'home.html'
     }, 2000)
@@ -84,13 +84,13 @@ saveProfileButton.addEventListener('click', async () => {
   }
 })
 
-// Fehler anzeigen (oder Erfolgsmeldung)
+// Display error
 function showError(message, isError = true) {
   errorMessage.textContent = message
   errorMessage.style.color = isError ? '#e0245e' : '#4BB543'
 }
 
-// Beiträge des Benutzers laden
+// Load user's posts
 async function loadUserPosts() {
   try {
     userPostsContainer.innerHTML =
@@ -140,7 +140,7 @@ async function loadUserPosts() {
   }
 }
 
-// Hilfsfunktion zum Formatieren des Datums
+// Helper function to format the date
 function formatDate(dateString) {
   const date = new Date(dateString)
   return date.toLocaleDateString('de-DE', {
@@ -152,14 +152,14 @@ function formatDate(dateString) {
   })
 }
 
-// Abmelden
+// logout
 logoutButton.addEventListener('click', () => {
   localStorage.removeItem('user')
   localStorage.removeItem('token')
   window.location.href = 'index.html'
 })
 
-// Beiträge beim Laden der Seite anzeigen
+// Display posts when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   loadUserPosts()
 })
